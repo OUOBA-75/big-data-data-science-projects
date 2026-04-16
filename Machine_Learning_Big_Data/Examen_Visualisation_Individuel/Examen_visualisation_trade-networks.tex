@@ -1,0 +1,1176 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Examen visualisation: International Trade Network},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Examen visualisation: International Trade Network}
+\author{}
+\date{\vspace{-2.5em}19 juillet 2025}
+
+\begin{document}
+\maketitle
+
+La taille et la structure des flux commerciaux internationaux varient
+considérablement au fil du temps. Cet exercice s'appuie en partie sur
+Luca De Benedictis et Lucia Tajoli. (2011). `The World Trade Network.'
+\emph{The World Economy}, 34:8, pp.1417-1454. Les données commerciales
+proviennent de Katherine Barbieri et Omar Keshk. (2012).
+\emph{Correlates of War Project Trade Data Set}, Version 3.0. et sont
+disponibles à : \url{http://correlatesofwar.org}.
+
+Le volume des biens échangés entre les pays a augmenté rapidement au
+cours du siècle dernier, à mesure que les progrès technologiques ont
+réduit le coût du transport et que les pays ont adopté des politiques
+commerciales plus libérales. Parfois, cependant, les flux commerciaux
+ont diminué en raison d'événements perturbateurs tels que des guerres
+majeures et l'adoption de politiques commerciales protectionnistes. Dans
+cet exercice, nous allons explorer certains de ces changements en
+examinant le réseau de commerce international sur plusieurs périodes. Le
+fichier de données \texttt{trade.csv} contient la valeur des
+exportations d'un pays vers un autre au cours d'une année donnée. Les
+noms et descriptions des variables de cet ensemble de données sont :
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Name & Description \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{country1} & Country name of exporter \\
+\texttt{country2} & Country name of importer \\
+\texttt{year} & Year \\
+\texttt{exports} & Total value of exports (in tens of millions of
+dollars) \\
+\end{longtable}
+
+Les données sont données pour les années 1900, 1920, 1940, 1955, 1980,
+2000 et 2009.
+
+\subsection{Question 1}\label{question-1}
+
+Après avoir lu l'article, faites en un résumé succinct des objectifs et
+de la méthodologie. décrivez les principaux indicateurs de mesure des
+données de réseaux
+
+REPONSE: L'objectif principal de l'article est d'analyser le commerce
+international à travers une approche de réseau. Au lieu de voir les
+échanges entre pays comme des données tabulaires classiques, les auteurs
+les modélisent comme un réseau dirigé où :
+
+Chaque pays est un nœud,
+
+Chaque flux commercial est un arc allant d'un pays exportateur vers un
+pays importateur.
+
+Cette approche permet de mieux comprendre la structure globale du
+système commercial mondial, ses dynamiques historiques (de 1950 à 2000)
+et les positions stratégiques des pays dans le réseau international.
+
+Méthodologie Modélisation du réseau : Les auteurs construisent pour
+chaque année un graphe dirigé, pondéré ou non, selon que l'on tient
+compte de la valeur des exportations ou uniquement de leur existence (0
+ou 1).
+
+Construction des matrices d'adjacence : Ils créent des matrices où
+chaque cellule (i,j) représente un lien d'exportation du pays i vers le
+pays j.
+
+Analyse temporelle : L'étude est menée pour plusieurs années clefs
+(notamment 1950, 1980 et 2000), pour observer les changements
+structurels du commerce mondial.
+
+Mesures de réseau : Divers indicateurs issus de la théorie des graphes
+sont utilisés pour quantifier la structure du réseau et le rôle des
+pays.
+
+Principaux indicateurs de réseau utilisés Densité du réseau (network
+density) :
+
+Proportion de liens effectivement existants par rapport au nombre
+maximal possible.
+
+Donne une idée du niveau global de connectivité du réseau.
+
+Degré (degree centrality) :
+
+Nombre de partenaires commerciaux d'un pays.
+
+On distingue le degré entrant (nombre d'importateurs) et le degré
+sortant (nombre d'exportateurs).
+
+Centralité d'intermédiarité (betweenness centrality) :
+
+Mesure combien de fois un pays agit comme pont entre d'autres pays dans
+les chemins commerciaux les plus courts.
+
+Indique les pays-clés dans la circulation mondiale des biens.
+
+Proximité (closeness centrality) :
+
+Mesure l'accessibilité d'un pays aux autres dans le réseau.
+
+Plus un pays est « proche » de tous les autres, plus il peut rapidement
+échanger.
+
+Composantes fortement connexes :
+
+Sous-groupes de pays qui échangent entre eux de manière réciproque.
+
+Permet d'identifier des blocs régionaux ou géopolitiques (ex : Europe de
+l'Ouest, ex-bloc soviétique).
+
+Conclusion
+
+L'article applique une approche de réseau pour analyser la structure du
+commerce international entre pays, en mesurant la densité, la centralité
+(degré, intermédiarité, proximité) et les composantes du réseau
+commercial mondial sur plus d'un demi-siècle.
+
+\subsection{Question 2}\label{question-2}
+
+On n'a pas les mêmes pays chaque année. Certains pays disparaissent
+alors que d'autres naissent, surtout lors de la dislocation du bloc
+soviétique. Créer une list qui fait la liste des pays intervenus dans le
+commerce chaque année
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Charger les données}
+
+\FunctionTok{library}\NormalTok{(readr)}
+\NormalTok{trade }\OtherTok{\textless{}{-}} \FunctionTok{read\_csv}\NormalTok{(}\StringTok{"data/trade.csv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Rows: 114588 Columns: 4
+## -- Column specification --------------------------------------------------------
+## Delimiter: ","
+## chr (2): country1, country2
+## dbl (2): year, exports
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Remplacer les NA dans la variable exports par 0}
+\NormalTok{trade}\SpecialCharTok{$}\NormalTok{exports[}\FunctionTok{is.na}\NormalTok{(trade}\SpecialCharTok{$}\NormalTok{exports)] }\OtherTok{\textless{}{-}} \DecValTok{0}
+
+
+\CommentTok{\# Créer une liste des pays impliqués dans le commerce pour chaque année}
+\FunctionTok{library}\NormalTok{(dplyr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attachement du package : 'dplyr'
+## 
+## Les objets suivants sont masqués depuis 'package:stats':
+## 
+##     filter, lag
+## 
+## Les objets suivants sont masqués depuis 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pays\_par\_annee }\OtherTok{\textless{}{-}}\NormalTok{ trade }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(year) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}
+    \AttributeTok{pays =} \FunctionTok{list}\NormalTok{(}\FunctionTok{sort}\NormalTok{(}\FunctionTok{unique}\NormalTok{(}\FunctionTok{c}\NormalTok{(country1, country2)))),}
+    \AttributeTok{nb\_pays =} \FunctionTok{length}\NormalTok{(}\FunctionTok{unique}\NormalTok{(}\FunctionTok{c}\NormalTok{(country1, country2)))}
+\NormalTok{  )}
+
+
+
+\FunctionTok{library}\NormalTok{(openxlsx)}
+
+\CommentTok{\# Exporter le tableau en Excel}
+\FunctionTok{write.xlsx}\NormalTok{(pays\_par\_annee, }\StringTok{"data/pays\_par\_annee.xlsx"}\NormalTok{)}
+
+\CommentTok{\# Afficher le résultat}
+\FunctionTok{print}\NormalTok{(pays\_par\_annee)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 7 x 3
+##    year pays        nb_pays
+##   <dbl> <list>        <int>
+## 1  1900 <chr [42]>       42
+## 2  1920 <chr [59]>       59
+## 3  1940 <chr [62]>       62
+## 4  1955 <chr [84]>       84
+## 5  1980 <chr [156]>     156
+## 6  2000 <chr [191]>     191
+## 7  2009 <chr [196]>     196
+\end{verbatim}
+
+\subsection{Question 3}\label{question-3}
+
+Maintenant, on va regarder uniquement les données de 1900. Créer une
+nouvelle base de données uniquement avec cette année. Quelle est la
+somme totale des exportations des états unis cette année. Quelle est la
+part de cette exportation vers tous les pays avec lesquels les États
+unis ont commercé cette année? Présenter un graphique qui résume votre
+réponse à la dernière question.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# 1. Filtrer les données pour l\textquotesingle{}année 1900}
+\NormalTok{data\_1900 }\OtherTok{\textless{}{-}}\NormalTok{ trade }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(year }\SpecialCharTok{==} \DecValTok{1900}\NormalTok{)}
+
+\CommentTok{\# 2. Extraire les exportations depuis les États{-}Unis}
+\NormalTok{usa\_exports\_1900 }\OtherTok{\textless{}{-}}\NormalTok{ data\_1900 }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(country1 }\SpecialCharTok{==} \StringTok{"United States of America"}\NormalTok{)}
+
+\CommentTok{\# 3. Calculer la somme totale des exportations américaines en 1900}
+\NormalTok{total\_exports\_usa }\OtherTok{\textless{}{-}} \FunctionTok{sum}\NormalTok{(usa\_exports\_1900}\SpecialCharTok{$}\NormalTok{exports, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{)}
+
+\CommentTok{\# 4. Calculer la part de chaque pays importateur dans les exportations US}
+\NormalTok{usa\_exports\_1900 }\OtherTok{\textless{}{-}}\NormalTok{ usa\_exports\_1900 }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{part =}\NormalTok{ exports }\SpecialCharTok{/}\NormalTok{ total\_exports\_usa  }\CommentTok{\# proportion des exportations par pays}
+\NormalTok{  )}
+
+\CommentTok{\# 5. Graphique : part des exportations par pays importateur (barplot)}
+\FunctionTok{library}\NormalTok{(ggplot2)}
+
+\FunctionTok{ggplot}\NormalTok{(usa\_exports\_1900, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{reorder}\NormalTok{(country2, }\SpecialCharTok{{-}}\NormalTok{part), }\AttributeTok{y =}\NormalTok{ part)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_bar}\NormalTok{(}\AttributeTok{stat =} \StringTok{"identity"}\NormalTok{, }\AttributeTok{fill =} \StringTok{"steelblue"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"Part des exportations américaines par pays en 1900"}\NormalTok{,}
+    \AttributeTok{x =} \StringTok{"Pays importateur"}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Part (\%)"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}\AttributeTok{labels =}\NormalTok{ scales}\SpecialCharTok{::}\NormalTok{percent) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{60}\NormalTok{, }\AttributeTok{hjust =} \DecValTok{1}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-2-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Garder uniquement les 10 premiers pays par valeur d’exportation}
+\NormalTok{top10\_usa\_exports }\OtherTok{\textless{}{-}}\NormalTok{ usa\_exports\_1900 }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{arrange}\NormalTok{(}\FunctionTok{desc}\NormalTok{(exports)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{slice}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\DecValTok{10}\NormalTok{)}
+
+\CommentTok{\# Graphique plus lisible (Top 10 uniquement)}
+\FunctionTok{ggplot}\NormalTok{(top10\_usa\_exports, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{reorder}\NormalTok{(country2, }\SpecialCharTok{{-}}\NormalTok{part), }\AttributeTok{y =}\NormalTok{ part)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_bar}\NormalTok{(}\AttributeTok{stat =} \StringTok{"identity"}\NormalTok{, }\AttributeTok{fill =} \StringTok{"darkgreen"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"Top 10 des partenaires commerciaux des USA en 1900"}\NormalTok{,}
+    \AttributeTok{x =} \StringTok{"Pays importateur"}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Part (\%)"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}\AttributeTok{labels =}\NormalTok{ scales}\SpecialCharTok{::}\FunctionTok{percent\_format}\NormalTok{(}\AttributeTok{accuracy =} \DecValTok{1}\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{axis.text.x =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{angle =} \DecValTok{60}\NormalTok{, }\AttributeTok{hjust =} \DecValTok{1}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-3-1.pdf}}
+
+\subsection{Question 4}\label{question-4}
+
+Une meilleure représentation serait de faire le treemap. Présenter
+l'information avec ce graphique en indiquant clairement les pays et les
+continents en jeu.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Charger les bibliothèques nécessaires}
+\FunctionTok{library}\NormalTok{(dplyr)}
+\FunctionTok{library}\NormalTok{(ggplot2)}
+\FunctionTok{library}\NormalTok{(treemapify)}
+\FunctionTok{library}\NormalTok{(countrycode)}
+
+\CommentTok{\# 1. Reprendre les exportations des USA en 1900 (déjà filtrées précédemment)}
+\NormalTok{usa\_exports\_1900 }\OtherTok{\textless{}{-}}\NormalTok{ trade }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(year }\SpecialCharTok{==} \DecValTok{1900}\NormalTok{, country1 }\SpecialCharTok{==} \StringTok{"United States of America"}\NormalTok{)}
+
+\CommentTok{\# Correction manuelle des noms historiques}
+\NormalTok{usa\_exports\_1900 }\OtherTok{\textless{}{-}}\NormalTok{ usa\_exports\_1900 }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{country2 =} \FunctionTok{case\_when}\NormalTok{(}
+\NormalTok{      country2 }\SpecialCharTok{==} \StringTok{"Austria{-}Hungary"} \SpecialCharTok{\textasciitilde{}} \StringTok{"Austria"}\NormalTok{,       }\CommentTok{\# ou "Hungary" selon ton choix}
+\NormalTok{      country2 }\SpecialCharTok{==} \StringTok{"Yugoslavia"} \SpecialCharTok{\textasciitilde{}} \StringTok{"Serbia"}\NormalTok{,             }\CommentTok{\# ou "Bosnia", "Croatia", etc.}
+      \ConstantTok{TRUE} \SpecialCharTok{\textasciitilde{}}\NormalTok{ country2}
+\NormalTok{    ),}
+    \AttributeTok{continent =} \FunctionTok{countrycode}\NormalTok{(country2, }\AttributeTok{origin =} \StringTok{"country.name"}\NormalTok{, }\AttributeTok{destination =} \StringTok{"continent"}\NormalTok{)}
+\NormalTok{  )}
+
+
+\CommentTok{\# 2. Ajouter une colonne "continent" basée sur les noms de pays importateurs}
+\NormalTok{usa\_exports\_1900 }\OtherTok{\textless{}{-}}\NormalTok{ usa\_exports\_1900 }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{continent =} \FunctionTok{countrycode}\NormalTok{(country2, }\AttributeTok{origin =} \StringTok{"country.name"}\NormalTok{, }\AttributeTok{destination =} \StringTok{"continent"}\NormalTok{)}
+\NormalTok{  )}
+
+\CommentTok{\# 3. Supprimer les lignes sans continent identifié}
+\NormalTok{usa\_exports\_1900 }\OtherTok{\textless{}{-}}\NormalTok{ usa\_exports\_1900 }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(continent))}
+
+\CommentTok{\# 4. Créer le treemap}
+\FunctionTok{ggplot}\NormalTok{(usa\_exports\_1900, }\FunctionTok{aes}\NormalTok{(}
+  \AttributeTok{area =}\NormalTok{ exports, }\AttributeTok{fill =}\NormalTok{ continent, }\AttributeTok{label =}\NormalTok{ country2, }\AttributeTok{subgroup =}\NormalTok{ continent}
+\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap\_text}\NormalTok{(}\AttributeTok{colour =} \StringTok{"white"}\NormalTok{, }\AttributeTok{place =} \StringTok{"centre"}\NormalTok{, }\AttributeTok{grow =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{reflow =} \ConstantTok{TRUE}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap\_subgroup\_border}\NormalTok{(}\AttributeTok{color =} \StringTok{"black"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap\_subgroup\_text}\NormalTok{(}\AttributeTok{place =} \StringTok{"centre"}\NormalTok{, }\AttributeTok{grow =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{alpha =} \FloatTok{0.5}\NormalTok{, }\AttributeTok{colour =} \StringTok{"black"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Treemap des exportations américaines en 1900"}\NormalTok{, }\AttributeTok{fill =} \StringTok{"Continent"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-4-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# 1. Sélection des 20 principaux pays importateurs par valeur exportée}
+\NormalTok{top20\_usa\_exports }\OtherTok{\textless{}{-}}\NormalTok{ usa\_exports\_1900 }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{arrange}\NormalTok{(}\FunctionTok{desc}\NormalTok{(exports)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{slice}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\DecValTok{20}\NormalTok{)}
+
+\CommentTok{\# Exporter le tableau en Excel}
+\FunctionTok{write.xlsx}\NormalTok{(top20\_usa\_exports, }\StringTok{"data/top20\_usa\_exports.xlsx"}\NormalTok{)}
+
+\CommentTok{\# 2. Treemap avec continents et pays (Top 20)}
+\FunctionTok{ggplot}\NormalTok{(top20\_usa\_exports, }\FunctionTok{aes}\NormalTok{(}
+  \AttributeTok{area =}\NormalTok{ exports, }\AttributeTok{fill =}\NormalTok{ continent, }\AttributeTok{label =}\NormalTok{ country2, }\AttributeTok{subgroup =}\NormalTok{ continent}
+\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap\_text}\NormalTok{(}\AttributeTok{colour =} \StringTok{"white"}\NormalTok{, }\AttributeTok{place =} \StringTok{"centre"}\NormalTok{, }\AttributeTok{grow =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{reflow =} \ConstantTok{TRUE}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap\_subgroup\_border}\NormalTok{(}\AttributeTok{color =} \StringTok{"black"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap\_subgroup\_text}\NormalTok{(}\AttributeTok{place =} \StringTok{"centre"}\NormalTok{, }\AttributeTok{grow =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{alpha =} \FloatTok{0.5}\NormalTok{, }\AttributeTok{colour =} \StringTok{"black"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Top 20 des pays importateurs des États{-}Unis en 1900 (Treemap)"}\NormalTok{,}
+       \AttributeTok{fill =} \StringTok{"Continent"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-5-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(openxlsx)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Question 5}\label{question-5}
+
+Maintenant, considérer les données des années 1900 et 2009. Comparer à
+partir d'un treemap l'évolution du commerce international entre ces deux
+dates. Utiliser ecore une fois l'indicateurs du pourcentage des
+exportations. Faites attention, entre temps certains pays int disparu et
+d;autres sont apparus. Il faut les inclure correctement dans leur
+continent.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Charger les bibliothèques utiles}
+\FunctionTok{library}\NormalTok{(dplyr)}
+\FunctionTok{library}\NormalTok{(ggplot2)}
+\FunctionTok{library}\NormalTok{(treemapify)}
+\FunctionTok{library}\NormalTok{(countrycode)}
+
+\CommentTok{\# 1. Filtrer les années 1900 et 2009}
+\NormalTok{data\_2years }\OtherTok{\textless{}{-}}\NormalTok{ trade }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(year }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\DecValTok{1900}\NormalTok{, }\DecValTok{2009}\NormalTok{))}
+
+\CommentTok{\# 2. Remplacer les NA par 0 pour éviter les erreurs}
+\NormalTok{data\_2years}\SpecialCharTok{$}\NormalTok{exports[}\FunctionTok{is.na}\NormalTok{(data\_2years}\SpecialCharTok{$}\NormalTok{exports)] }\OtherTok{\textless{}{-}} \DecValTok{0}
+
+\CommentTok{\# 3. Calculer les exportations totales par pays exportateur pour chaque année}
+\NormalTok{export\_by\_country }\OtherTok{\textless{}{-}}\NormalTok{ data\_2years }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(year, country1) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{total\_exports =} \FunctionTok{sum}\NormalTok{(exports), }\AttributeTok{.groups =} \StringTok{"drop"}\NormalTok{)}
+
+\CommentTok{\# 4. Ajouter le pourcentage d\textquotesingle{}exportation mondiale pour chaque année}
+\NormalTok{export\_by\_country }\OtherTok{\textless{}{-}}\NormalTok{ export\_by\_country }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(year) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{share =}\NormalTok{ total\_exports }\SpecialCharTok{/} \FunctionTok{sum}\NormalTok{(total\_exports))}
+
+\CommentTok{\# 5. Ajouter le continent correspondant à chaque pays exportateur}
+\NormalTok{export\_by\_country }\OtherTok{\textless{}{-}}\NormalTok{ export\_by\_country }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{continent =} \FunctionTok{countrycode}\NormalTok{(country1, }\AttributeTok{origin =} \StringTok{"country.name"}\NormalTok{, }\AttributeTok{destination =} \StringTok{"continent"}\NormalTok{),}
+    \AttributeTok{country1 =} \FunctionTok{case\_when}\NormalTok{(}
+\NormalTok{      country1 }\SpecialCharTok{==} \StringTok{"Austria{-}Hungary"} \SpecialCharTok{\textasciitilde{}} \StringTok{"Austria"}\NormalTok{,}
+\NormalTok{      country1 }\SpecialCharTok{==} \StringTok{"Yugoslavia"} \SpecialCharTok{\textasciitilde{}} \StringTok{"Serbia"}\NormalTok{,}
+      \ConstantTok{TRUE} \SpecialCharTok{\textasciitilde{}}\NormalTok{ country1}
+\NormalTok{    )}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: There were 2 warnings in `mutate()`.
+## The first warning was:
+## i In argument: `continent = countrycode(country1, origin = "country.name",
+##   destination = "continent")`.
+## i In group 1: `year = 1900`.
+## Caused by warning:
+## ! Some values were not matched unambiguously: Austria-Hungary, Yugoslavia
+## i Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Supprimer les lignes avec continent inconnu}
+\NormalTok{export\_by\_country }\OtherTok{\textless{}{-}}\NormalTok{ export\_by\_country }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(continent))}
+
+\CommentTok{\# 6. Créer le treemap comparatif}
+\FunctionTok{ggplot}\NormalTok{(export\_by\_country, }\FunctionTok{aes}\NormalTok{(}
+  \AttributeTok{area =}\NormalTok{ share, }\AttributeTok{fill =}\NormalTok{ continent, }\AttributeTok{label =}\NormalTok{ country1, }\AttributeTok{subgroup =}\NormalTok{ continent}
+\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap\_text}\NormalTok{(}\AttributeTok{colour =} \StringTok{"white"}\NormalTok{, }\AttributeTok{place =} \StringTok{"centre"}\NormalTok{, }\AttributeTok{grow =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{reflow =} \ConstantTok{TRUE}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap\_subgroup\_border}\NormalTok{(}\AttributeTok{color =} \StringTok{"black"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_treemap\_subgroup\_text}\NormalTok{(}\AttributeTok{place =} \StringTok{"centre"}\NormalTok{, }\AttributeTok{grow =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{alpha =} \FloatTok{0.5}\NormalTok{, }\AttributeTok{colour =} \StringTok{"black"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{facet\_wrap}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ year) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"Comparaison du commerce international par pays (1900 vs 2009)"}\NormalTok{,}
+    \AttributeTok{fill =} \StringTok{"Continent"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-6-1.pdf}}
+\#\#\# Interprétation synthétique du treemap comparatif (1900 et 2009)
+
+Le treemap comparatif révèle une transformation profonde du commerce
+mondial entre 1900 et 2009. En 1900, les exportations sont fortement
+concentrées autour des grandes puissances occidentales (Royaume-Uni,
+Allemagne, France, États-Unis), avec quelques partenaires secondaires en
+Amérique latine. En 2009, le paysage commercial est nettement plus
+multipolaire : aux côtés des États-Unis, on observe la montée en
+puissance de la Chine, de l'Allemagne réunifiée, du Japon, de la Corée
+du Sud et de plusieurs pays émergents d'Asie et d'Europe de l'Est. Cette
+évolution reflète une diversification géographique des échanges, une
+réallocation des chaînes de production vers l'Asie, et les conséquences
+géopolitiques majeures du XXe siècle (disparition d'États,
+indépendances, réunifications). Certains anciens pôles (Portugal,
+Belgique, Espagne) reculent en importance relative. En somme, le treemap
+met en lumière le passage d'un commerce dominé par quelques empires à un
+réseau mondialisé, dense et multipolaire, révélateur de l'essor des
+économies émergentes et de la reconfiguration des flux mondiaux.
+
+\subsection{Question 6: Bonus}\label{question-6-bonus}
+
+Les données dont nous disposons sont des données de réseau. Présenter
+les graphiques de la page 1433 de l'article. Pour ce faire, suivez les
+étapes suivantes:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Nous commençons par analyser le commerce international comme un réseau
+  non pondéré et dirigé. Pour chaque année de l'ensemble de données,
+  créez une matrice d'adjacence dont l'entrée \((i,j)\) est égale à 1 si
+  le pays \(i\) exporte vers le pays \(j\). Si cette exportation est
+  nulle, alors l'entrée est égale à 0. Nous supposons que les données
+  manquantes, indiquées par «NA», représentent un commerce nul. Tracez
+  la «densité du réseau», qui est définie au fil du temps comme suit:
+\end{enumerate}
+
+\[
+    \text{network density}  =  \frac{\text{number of edges}}{\text{number of potential edges}}
+  \]
+
+La fonction \texttt{graph.density} du package igraph
+(\url{https://igraph.org/}) peut calculer cette mesure à partir d'une
+matrice d'adjacence. cet exercice est une exploration dans les données
+de réseau avec igraph. Interprétez le résultat.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\item
+  Présenter le graphique
+\item
+  Pour les années 1900, 1955 et 2009, calculez les mesures de centralité
+  en fonction du degré, de l'intermédiarité et de la proximité (en
+  fonction du degré total) pour chaque année. Pour chaque année, dressez
+  la liste des cinq pays qui ont les valeurs les plus élevées de ces
+  mesures de centralité. Comment les pays figurant sur les listes
+  évoluent-ils au fil du temps? Commentez brièvement les résultats.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#\# Partie 1 (densité du réseau)}
+\CommentTok{\# Charger les bibliothèques}
+\FunctionTok{library}\NormalTok{(igraph)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attachement du package : 'igraph'
+\end{verbatim}
+
+\begin{verbatim}
+## Les objets suivants sont masqués depuis 'package:dplyr':
+## 
+##     as_data_frame, groups, union
+\end{verbatim}
+
+\begin{verbatim}
+## Les objets suivants sont masqués depuis 'package:stats':
+## 
+##     decompose, spectrum
+\end{verbatim}
+
+\begin{verbatim}
+## L'objet suivant est masqué depuis 'package:base':
+## 
+##     union
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(dplyr)}
+\FunctionTok{library}\NormalTok{(tidyr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attachement du package : 'tidyr'
+\end{verbatim}
+
+\begin{verbatim}
+## L'objet suivant est masqué depuis 'package:igraph':
+## 
+##     crossing
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(ggplot2)}
+
+
+\NormalTok{trade}\SpecialCharTok{$}\NormalTok{exports[}\FunctionTok{is.na}\NormalTok{(trade}\SpecialCharTok{$}\NormalTok{exports)] }\OtherTok{\textless{}{-}} \DecValTok{0}  \CommentTok{\# remplacer les NA par 0}
+
+\CommentTok{\# Liste des années disponibles}
+\NormalTok{years }\OtherTok{\textless{}{-}} \FunctionTok{sort}\NormalTok{(}\FunctionTok{unique}\NormalTok{(trade}\SpecialCharTok{$}\NormalTok{year))}
+
+\CommentTok{\# Initialiser un tableau pour stocker les densités}
+\NormalTok{densities }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{()}
+
+\ControlFlowTok{for}\NormalTok{ (yr }\ControlFlowTok{in}\NormalTok{ years) \{}
+  \CommentTok{\# Filtrer les données pour l\textquotesingle{}année en cours}
+\NormalTok{  data\_year }\OtherTok{\textless{}{-}}\NormalTok{ trade }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(year }\SpecialCharTok{==}\NormalTok{ yr)}
+  
+  \CommentTok{\# Créer la matrice d\textquotesingle{}adjacence binaire : 1 si export \textgreater{} 0}
+\NormalTok{  edge\_list }\OtherTok{\textless{}{-}}\NormalTok{ data\_year }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{filter}\NormalTok{(exports }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{select}\NormalTok{(}\AttributeTok{from =}\NormalTok{ country1, }\AttributeTok{to =}\NormalTok{ country2)}
+  
+  \CommentTok{\# Créer le graphe dirigé}
+\NormalTok{  g }\OtherTok{\textless{}{-}} \FunctionTok{graph\_from\_data\_frame}\NormalTok{(edge\_list, }\AttributeTok{directed =} \ConstantTok{TRUE}\NormalTok{)}
+  
+  \CommentTok{\# Calculer la densité du réseau}
+\NormalTok{  dens }\OtherTok{\textless{}{-}} \FunctionTok{edge\_density}\NormalTok{(g)}
+  
+  \CommentTok{\# Ajouter au tableau}
+\NormalTok{  densities }\OtherTok{\textless{}{-}} \FunctionTok{rbind}\NormalTok{(densities, }\FunctionTok{data.frame}\NormalTok{(}\AttributeTok{year =}\NormalTok{ yr, }\AttributeTok{density =}\NormalTok{ dens))}
+\NormalTok{\}}
+
+\CommentTok{\# Visualiser la densité du réseau au fil du temps}
+\FunctionTok{ggplot}\NormalTok{(densities, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ year, }\AttributeTok{y =}\NormalTok{ density)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\AttributeTok{color =} \StringTok{"steelblue"}\NormalTok{, }\AttributeTok{size =} \FloatTok{1.2}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{color =} \StringTok{"darkred"}\NormalTok{, }\AttributeTok{size =} \DecValTok{2}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Densité du réseau commercial international (1900–2009)"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Année"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Densité du réseau"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+## i Please use `linewidth` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.
+\end{verbatim}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-7-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#\# Autre graphique}
+
+\FunctionTok{library}\NormalTok{(ggplot2)}
+
+\FunctionTok{ggplot}\NormalTok{(densities, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ year, }\AttributeTok{y =}\NormalTok{ density)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\AttributeTok{color =} \StringTok{"steelblue"}\NormalTok{, }\AttributeTok{size =} \FloatTok{1.3}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{color =} \StringTok{"darkred"}\NormalTok{, }\AttributeTok{size =} \DecValTok{3}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_text}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{label =} \FunctionTok{round}\NormalTok{(density, }\DecValTok{3}\NormalTok{)), }\AttributeTok{vjust =} \SpecialCharTok{{-}}\FloatTok{0.8}\NormalTok{, }\AttributeTok{size =} \DecValTok{4}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Évolution de la densité du réseau commercial mondial"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Année"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Densité du réseau"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size =} \DecValTok{14}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-8-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#\# Barplot clair par année}
+
+\FunctionTok{ggplot}\NormalTok{(densities, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{factor}\NormalTok{(year), }\AttributeTok{y =}\NormalTok{ density, }\AttributeTok{fill =}\NormalTok{ density)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_col}\NormalTok{(}\AttributeTok{show.legend =} \ConstantTok{FALSE}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_text}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{label =} \FunctionTok{round}\NormalTok{(density, }\DecValTok{3}\NormalTok{)), }\AttributeTok{vjust =} \SpecialCharTok{{-}}\FloatTok{0.5}\NormalTok{, }\AttributeTok{size =} \DecValTok{4}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_gradient}\NormalTok{(}\AttributeTok{low =} \StringTok{"\#FFDDC1"}\NormalTok{, }\AttributeTok{high =} \StringTok{"\#2C3E50"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Densité du réseau commercial international (par année)"}\NormalTok{,}
+       \AttributeTok{x =} \StringTok{"Année"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Densité"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size =} \DecValTok{14}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-9-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#\# Mesures de centralité réseau}
+\CommentTok{\# Années à analyser}
+\NormalTok{target\_years }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{1900}\NormalTok{, }\DecValTok{1955}\NormalTok{, }\DecValTok{2009}\NormalTok{)}
+
+\CommentTok{\# Initialiser un tableau de résultats}
+\NormalTok{centrality\_results }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{()}
+
+\CommentTok{\# Boucle sur les années cibles}
+\ControlFlowTok{for}\NormalTok{ (yr }\ControlFlowTok{in}\NormalTok{ target\_years) \{}
+  \CommentTok{\# Filtrer les données pour l’année}
+\NormalTok{  data\_year }\OtherTok{\textless{}{-}}\NormalTok{ trade }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{filter}\NormalTok{(year }\SpecialCharTok{==}\NormalTok{ yr }\SpecialCharTok{\&}\NormalTok{ exports }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{select}\NormalTok{(}\AttributeTok{from =}\NormalTok{ country1, }\AttributeTok{to =}\NormalTok{ country2)}
+  
+  \CommentTok{\# Construire le graphe dirigé}
+\NormalTok{  g }\OtherTok{\textless{}{-}} \FunctionTok{graph\_from\_data\_frame}\NormalTok{(data\_year, }\AttributeTok{directed =} \ConstantTok{TRUE}\NormalTok{)}
+  
+  \CommentTok{\# Calculer les centralités}
+\NormalTok{  degree\_cent }\OtherTok{\textless{}{-}} \FunctionTok{degree}\NormalTok{(g, }\AttributeTok{mode =} \StringTok{"all"}\NormalTok{)}
+\NormalTok{  between\_cent }\OtherTok{\textless{}{-}} \FunctionTok{betweenness}\NormalTok{(g, }\AttributeTok{normalized =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{  close\_cent }\OtherTok{\textless{}{-}} \FunctionTok{closeness}\NormalTok{(g, }\AttributeTok{normalized =} \ConstantTok{TRUE}\NormalTok{)}
+  
+  \CommentTok{\# Créer une table avec les résultats}
+\NormalTok{  centrality\_df }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}
+    \AttributeTok{country =} \FunctionTok{names}\NormalTok{(degree\_cent),}
+    \AttributeTok{year =}\NormalTok{ yr,}
+    \AttributeTok{degree =}\NormalTok{ degree\_cent,}
+    \AttributeTok{betweenness =}\NormalTok{ between\_cent,}
+    \AttributeTok{closeness =}\NormalTok{ close\_cent}
+\NormalTok{  )}
+  
+  \CommentTok{\# Garder seulement les top 5 pour chaque mesure}
+\NormalTok{  top5\_degree }\OtherTok{\textless{}{-}}\NormalTok{ centrality\_df }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{arrange}\NormalTok{(}\FunctionTok{desc}\NormalTok{(degree)) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{slice}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\DecValTok{5}\NormalTok{)}
+\NormalTok{  top5\_between }\OtherTok{\textless{}{-}}\NormalTok{ centrality\_df }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{arrange}\NormalTok{(}\FunctionTok{desc}\NormalTok{(betweenness)) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{slice}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\DecValTok{5}\NormalTok{)}
+\NormalTok{  top5\_close }\OtherTok{\textless{}{-}}\NormalTok{ centrality\_df }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{arrange}\NormalTok{(}\FunctionTok{desc}\NormalTok{(closeness)) }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{slice}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\DecValTok{5}\NormalTok{)}
+  
+  \CommentTok{\# Stocker dans une liste}
+\NormalTok{  centrality\_results[[}\FunctionTok{as.character}\NormalTok{(yr)]] }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}
+    \AttributeTok{degree =}\NormalTok{ top5\_degree,}
+    \AttributeTok{betweenness =}\NormalTok{ top5\_between,}
+    \AttributeTok{closeness =}\NormalTok{ top5\_close}
+\NormalTok{  )}
+\NormalTok{\}}
+
+\CommentTok{\# Affichage des résultats}
+\NormalTok{centrality\_results}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $`1900`
+## $`1900`$degree
+##                                           country year degree betweenness
+## United Kingdom                     United Kingdom 1900     65  0.35248336
+## United States of America United States of America 1900     54  0.11185210
+## France                                     France 1900     47  0.05046188
+## Germany                                   Germany 1900     47  0.05360914
+## Belgium                                   Belgium 1900     42  0.03145395
+##                          closeness
+## United Kingdom           0.9459459
+## United States of America 0.8333333
+## France                   0.7608696
+## Germany                  0.7777778
+## Belgium                  0.7142857
+## 
+## $`1900`$betweenness
+##                                           country year degree betweenness
+## United Kingdom                     United Kingdom 1900     65  0.35248336
+## United States of America United States of America 1900     54  0.11185210
+## Japan                                       Japan 1900     28  0.07160401
+## Austria-Hungary                   Austria-Hungary 1900     33  0.06547755
+## Germany                                   Germany 1900     47  0.05360914
+##                          closeness
+## United Kingdom           0.9459459
+## United States of America 0.8333333
+## Japan                    0.6250000
+## Austria-Hungary          0.6603774
+## Germany                  0.7777778
+## 
+## $`1900`$closeness
+##                                           country year degree betweenness
+## United Kingdom                     United Kingdom 1900     65  0.35248336
+## United States of America United States of America 1900     54  0.11185210
+## Germany                                   Germany 1900     47  0.05360914
+## France                                     France 1900     47  0.05046188
+## Belgium                                   Belgium 1900     42  0.03145395
+##                          closeness
+## United Kingdom           0.9459459
+## United States of America 0.8333333
+## Germany                  0.7777778
+## France                   0.7608696
+## Belgium                  0.7142857
+## 
+## 
+## $`1955`
+## $`1955`$degree
+##                                         country year degree betweenness
+## United Kingdom                   United Kingdom 1955    151  0.04818518
+## German Federal Republic German Federal Republic 1955    147  0.03415625
+## Netherlands                         Netherlands 1955    146  0.02247210
+## Italy                                     Italy 1955    146  0.03972992
+## France                                   France 1955    145  0.02497874
+##                         closeness
+## United Kingdom          0.9634146
+## German Federal Republic 0.9518072
+## Netherlands             0.9634146
+## Italy                   0.9634146
+## France                  0.9518072
+## 
+## $`1955`$betweenness
+##                                           country year degree betweenness
+## United Kingdom                     United Kingdom 1955    151  0.04818518
+## Italy                                       Italy 1955    146  0.03972992
+## United States of America United States of America 1955    142  0.03583847
+## German Federal Republic   German Federal Republic 1955    147  0.03415625
+## France                                     France 1955    145  0.02497874
+##                          closeness
+## United Kingdom           0.9634146
+## Italy                    0.9634146
+## United States of America 0.9404762
+## German Federal Republic  0.9518072
+## France                   0.9518072
+## 
+## $`1955`$closeness
+##                                         country year degree betweenness
+## United Kingdom                   United Kingdom 1955    151  0.04818518
+## Netherlands                         Netherlands 1955    146  0.02247210
+## Italy                                     Italy 1955    146  0.03972992
+## France                                   France 1955    145  0.02497874
+## German Federal Republic German Federal Republic 1955    147  0.03415625
+##                         closeness
+## United Kingdom          0.9634146
+## Netherlands             0.9634146
+## Italy                   0.9634146
+## France                  0.9518072
+## German Federal Republic 0.9518072
+## 
+## 
+## $`2009`
+## $`2009`$degree
+##                                           country year degree betweenness
+## United Kingdom                     United Kingdom 2009    363  0.01266067
+## China                                       China 2009    363  0.01325424
+## India                                       India 2009    362  0.01330262
+## United States of America United States of America 2009    361  0.01498608
+## France                                     France 2009    361  0.01191885
+##                          closeness
+## United Kingdom           0.9739583
+## China                    0.9790576
+## India                    0.9790576
+## United States of America 0.9739583
+## France                   0.9739583
+## 
+## $`2009`$betweenness
+##                                           country year degree betweenness
+## Taiwan                                     Taiwan 2009     42  0.02133333
+## United States of America United States of America 2009    361  0.01498608
+## Canada                                     Canada 2009    358  0.01396141
+## Japan                                       Japan 2009    361  0.01361387
+## India                                       India 2009    362  0.01330262
+##                          closeness
+## Taiwan                   0.5297450
+## United States of America 0.9739583
+## Canada                   0.9639175
+## Japan                    0.9739583
+## India                    0.9790576
+## 
+## $`2009`$closeness
+##                                           country year degree betweenness
+## China                                       China 2009    363  0.01325424
+## India                                       India 2009    362  0.01330262
+## United States of America United States of America 2009    361  0.01498608
+## United Kingdom                     United Kingdom 2009    363  0.01266067
+## France                                     France 2009    361  0.01191885
+##                          closeness
+## China                    0.9790576
+## India                    0.9790576
+## United States of America 0.9739583
+## United Kingdom           0.9739583
+## France                   0.9739583
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## -- Attaching core tidyverse packages ------------------------ tidyverse 2.0.0 --
+## v forcats   1.0.0     v stringr   1.5.1
+## v lubridate 1.9.4     v tibble    3.3.0
+## v purrr     1.1.0     
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x lubridate::%--%()       masks igraph::%--%()
+## x tibble::as_data_frame() masks igraph::as_data_frame(), dplyr::as_data_frame()
+## x purrr::compose()        masks igraph::compose()
+## x tidyr::crossing()       masks igraph::crossing()
+## x dplyr::filter()         masks stats::filter()
+## x dplyr::lag()            masks stats::lag()
+## x purrr::simplify()       masks igraph::simplify()
+## i Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(igraph)}
+
+\CommentTok{\# 🧹 Étape 1 : Nettoyage des données (remplace NA par 0 dans exports)}
+\NormalTok{trade\_clean }\OtherTok{\textless{}{-}}\NormalTok{ trade }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(country1, country2, year, exports) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{exports =} \FunctionTok{ifelse}\NormalTok{(}\FunctionTok{is.na}\NormalTok{(exports), }\DecValTok{0}\NormalTok{, exports))}
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\FunctionTok{library}\NormalTok{(igraph)}
+
+\CommentTok{\# 🧠 Étape 2 corrigée : calcul densité avec gestion des doublons}
+\NormalTok{densites }\OtherTok{\textless{}{-}}\NormalTok{ trade\_clean }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(year) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_split}\NormalTok{() }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{map\_dfr}\NormalTok{(}\ControlFlowTok{function}\NormalTok{(df\_year) \{}
+\NormalTok{    annee }\OtherTok{\textless{}{-}} \FunctionTok{unique}\NormalTok{(df\_year}\SpecialCharTok{$}\NormalTok{year)}
+    
+    \CommentTok{\# 1. Créer valeur binaire}
+\NormalTok{    df\_bin }\OtherTok{\textless{}{-}}\NormalTok{ df\_year }\SpecialCharTok{\%\textgreater{}\%}
+      \FunctionTok{mutate}\NormalTok{(}\AttributeTok{value =} \FunctionTok{ifelse}\NormalTok{(exports }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%}
+      \FunctionTok{group\_by}\NormalTok{(country1, country2) }\SpecialCharTok{\%\textgreater{}\%}         \CommentTok{\# ⚠️ Aggrégation si doublons}
+      \FunctionTok{summarise}\NormalTok{(}\AttributeTok{value =} \FunctionTok{max}\NormalTok{(value), }\AttributeTok{.groups =} \StringTok{"drop"}\NormalTok{)}
+    
+    \CommentTok{\# 2. Création matrice d’adjacence}
+\NormalTok{    mat }\OtherTok{\textless{}{-}}\NormalTok{ df\_bin }\SpecialCharTok{\%\textgreater{}\%}
+      \FunctionTok{pivot\_wider}\NormalTok{(}\AttributeTok{names\_from =}\NormalTok{ country2, }\AttributeTok{values\_from =}\NormalTok{ value, }\AttributeTok{values\_fill =} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+      \FunctionTok{column\_to\_rownames}\NormalTok{(}\StringTok{"country1"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+      \FunctionTok{as.matrix}\NormalTok{()}
+    
+    \CommentTok{\# 3. Graphe dirigé}
+\NormalTok{    g }\OtherTok{\textless{}{-}} \FunctionTok{graph\_from\_adjacency\_matrix}\NormalTok{(mat, }\AttributeTok{mode =} \StringTok{"directed"}\NormalTok{, }\AttributeTok{diag =} \ConstantTok{FALSE}\NormalTok{)}
+    
+    \CommentTok{\# 4. Densité du graphe}
+    \FunctionTok{tibble}\NormalTok{(}\AttributeTok{annee =}\NormalTok{ annee, }\AttributeTok{densite =} \FunctionTok{graph.density}\NormalTok{(g))}
+\NormalTok{  \})}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: `graph.density()` was deprecated in igraph 2.0.0.
+## i Please use `edge_density()` instead.
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+## generated.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(densites, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ annee, }\AttributeTok{y =}\NormalTok{ densite)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\AttributeTok{color =} \StringTok{"\#2b8cbe"}\NormalTok{, }\AttributeTok{size =} \FloatTok{1.2}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{color =} \StringTok{"\#f03b20"}\NormalTok{, }\AttributeTok{size =} \DecValTok{2}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size =} \DecValTok{14}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"📊 Densité du réseau commercial international (1900–2009)"}\NormalTok{,}
+    \AttributeTok{x =} \StringTok{"Année"}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Densité du réseau"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-11-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{calculer\_centralites }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(df, annee\_cible) \{}
+  \CommentTok{\# 🔍 Filtrage de l’année cible + binarisation des flux}
+\NormalTok{  df\_filtre }\OtherTok{\textless{}{-}}\NormalTok{ df }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{filter}\NormalTok{(year }\SpecialCharTok{==}\NormalTok{ annee\_cible) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{mutate}\NormalTok{(}\AttributeTok{value =} \FunctionTok{ifelse}\NormalTok{(exports }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{group\_by}\NormalTok{(country1, country2) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{summarise}\NormalTok{(}\AttributeTok{value =} \FunctionTok{max}\NormalTok{(value), }\AttributeTok{.groups =} \StringTok{"drop"}\NormalTok{)}
+  
+  \CommentTok{\# 📊 Création de la matrice d’adjacence}
+\NormalTok{  mat }\OtherTok{\textless{}{-}}\NormalTok{ df\_filtre }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{pivot\_wider}\NormalTok{(}\AttributeTok{names\_from =}\NormalTok{ country2, }\AttributeTok{values\_from =}\NormalTok{ value, }\AttributeTok{values\_fill =} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{column\_to\_rownames}\NormalTok{(}\StringTok{"country1"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{as.matrix}\NormalTok{()}
+  
+  \CommentTok{\# 🌐 Création du graphe dirigé}
+\NormalTok{  g }\OtherTok{\textless{}{-}} \FunctionTok{graph\_from\_adjacency\_matrix}\NormalTok{(mat, }\AttributeTok{mode =} \StringTok{"directed"}\NormalTok{, }\AttributeTok{diag =} \ConstantTok{FALSE}\NormalTok{)}
+  
+  \CommentTok{\# 📌 Calcul des trois centralités}
+\NormalTok{  deg }\OtherTok{\textless{}{-}} \FunctionTok{degree}\NormalTok{(g, }\AttributeTok{mode =} \StringTok{"all"}\NormalTok{)}
+\NormalTok{  bet }\OtherTok{\textless{}{-}} \FunctionTok{betweenness}\NormalTok{(g, }\AttributeTok{directed =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{  clo }\OtherTok{\textless{}{-}} \FunctionTok{closeness}\NormalTok{(g, }\AttributeTok{mode =} \StringTok{"all"}\NormalTok{)}
+  
+  \FunctionTok{tibble}\NormalTok{(}\AttributeTok{pays =} \FunctionTok{names}\NormalTok{(deg), }\AttributeTok{degre =}\NormalTok{ deg, }\AttributeTok{intermediarite =}\NormalTok{ bet, }\AttributeTok{proximite =}\NormalTok{ clo) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{mutate}\NormalTok{(}\AttributeTok{annee =}\NormalTok{ annee\_cible) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{pivot\_longer}\NormalTok{(}\AttributeTok{cols =} \FunctionTok{c}\NormalTok{(degre, intermediarite, proximite), }\AttributeTok{names\_to =} \StringTok{"mesure"}\NormalTok{, }\AttributeTok{values\_to =} \StringTok{"valeur"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{group\_by}\NormalTok{(annee, mesure) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{slice\_max}\NormalTok{(}\AttributeTok{order\_by =}\NormalTok{ valeur, }\AttributeTok{n =} \DecValTok{5}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{arrange}\NormalTok{(annee, mesure, }\FunctionTok{desc}\NormalTok{(valeur))}
+\NormalTok{\}}
+
+\NormalTok{resultats\_centralites }\OtherTok{\textless{}{-}} \FunctionTok{map\_dfr}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\DecValTok{1900}\NormalTok{, }\DecValTok{1955}\NormalTok{, }\DecValTok{2009}\NormalTok{), }\SpecialCharTok{\textasciitilde{}}\FunctionTok{calculer\_centralites}\NormalTok{(trade\_clean, .x))}
+
+
+\CommentTok{\# Exporter le tableau en Excel}
+\FunctionTok{write.xlsx}\NormalTok{(resultats\_centralites, }\StringTok{"data/resultats\_centralites.xlsx"}\NormalTok{)}
+
+\NormalTok{resultats\_centralites }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(annee, mesure, pays, valeur) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{arrange}\NormalTok{(annee, mesure, }\FunctionTok{desc}\NormalTok{(valeur))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 46 x 4
+## # Groups:   annee, mesure [9]
+##    annee mesure         pays                     valeur
+##    <dbl> <chr>          <chr>                     <dbl>
+##  1  1900 degre          United States of America   57  
+##  2  1900 degre          Germany                    44  
+##  3  1900 degre          United Kingdom             38  
+##  4  1900 degre          Belgium                    36  
+##  5  1900 degre          Uruguay                    36  
+##  6  1900 intermediarite United States of America  397. 
+##  7  1900 intermediarite United Kingdom            168. 
+##  8  1900 intermediarite Germany                   103. 
+##  9  1900 intermediarite Japan                      75.6
+## 10  1900 intermediarite Belgium                    60.1
+## # i 36 more rows
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(ggplot2)}
+
+\CommentTok{\# 🧽 Nettoyage pour une présentation claire}
+\NormalTok{resultats\_centralites}\SpecialCharTok{$}\NormalTok{mesure }\OtherTok{\textless{}{-}} \FunctionTok{recode}\NormalTok{(resultats\_centralites}\SpecialCharTok{$}\NormalTok{mesure,}
+  \AttributeTok{degre =} \StringTok{"🎯 Degré"}\NormalTok{,}
+  \AttributeTok{intermediarite =} \StringTok{"🔀 Intermédiarité"}\NormalTok{,}
+  \AttributeTok{proximite =} \StringTok{"📍 Proximité"}
+\NormalTok{)}
+
+\CommentTok{\# 📊 Graphe en barres, groupé par année et mesure}
+\FunctionTok{ggplot}\NormalTok{(resultats\_centralites, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{reorder}\NormalTok{(pays, valeur), }\AttributeTok{y =}\NormalTok{ valeur, }\AttributeTok{fill =}\NormalTok{ pays)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_col}\NormalTok{(}\AttributeTok{show.legend =} \ConstantTok{FALSE}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{facet\_grid}\NormalTok{(mesure }\SpecialCharTok{\textasciitilde{}}\NormalTok{ annee, }\AttributeTok{scales =} \StringTok{"free"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{coord\_flip}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"🏛️ Mesures de centralité du commerce international (1900, 1955, 2009)"}\NormalTok{,}
+    \AttributeTok{x =} \StringTok{"Pays"}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Valeur de la centralité"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size =} \DecValTok{13}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}\AttributeTok{strip.text =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{color =} \StringTok{"black"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-13-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(igraph)}
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\FunctionTok{library}\NormalTok{(ggraph)}
+
+\CommentTok{\# 🔁 Fonction pour créer le graphe pour une année spécifique}
+\NormalTok{creer\_graphe\_reseau }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(data, annee) \{}
+  \CommentTok{\# Filtrage de l\textquotesingle{}année}
+\NormalTok{  df\_annee }\OtherTok{\textless{}{-}}\NormalTok{ data }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{filter}\NormalTok{(year }\SpecialCharTok{==}\NormalTok{ annee) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{mutate}\NormalTok{(}\AttributeTok{value =} \FunctionTok{ifelse}\NormalTok{(exports }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%}
+    \FunctionTok{filter}\NormalTok{(value }\SpecialCharTok{==} \DecValTok{1}\NormalTok{)}
+  
+  \CommentTok{\# Création du graphe dirigé non pondéré}
+\NormalTok{  graphe }\OtherTok{\textless{}{-}} \FunctionTok{graph\_from\_data\_frame}\NormalTok{(df\_annee[, }\FunctionTok{c}\NormalTok{(}\StringTok{"country1"}\NormalTok{, }\StringTok{"country2"}\NormalTok{)], }\AttributeTok{directed =} \ConstantTok{TRUE}\NormalTok{)}
+  
+  \CommentTok{\# Visualisation du graphe avec ggraph}
+  \FunctionTok{ggraph}\NormalTok{(graphe, }\AttributeTok{layout =} \StringTok{"fr"}\NormalTok{) }\SpecialCharTok{+}  \CommentTok{\# "fr" = Fruchterman{-}Reingold layout}
+    \FunctionTok{geom\_edge\_link}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.3}\NormalTok{, }\AttributeTok{arrow =} \FunctionTok{arrow}\NormalTok{(}\AttributeTok{length =} \FunctionTok{unit}\NormalTok{(}\DecValTok{2}\NormalTok{, }\StringTok{\textquotesingle{}mm\textquotesingle{}}\NormalTok{)), }\AttributeTok{end\_cap =} \FunctionTok{circle}\NormalTok{(}\DecValTok{2}\NormalTok{, }\StringTok{\textquotesingle{}mm\textquotesingle{}}\NormalTok{)) }\SpecialCharTok{+}
+    \FunctionTok{geom\_node\_point}\NormalTok{(}\AttributeTok{size =} \DecValTok{3}\NormalTok{, }\AttributeTok{color =} \StringTok{"\#2b8cbe"}\NormalTok{) }\SpecialCharTok{+}
+    \FunctionTok{geom\_node\_text}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{label =}\NormalTok{ name), }\AttributeTok{repel =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{size =} \DecValTok{3}\NormalTok{, }\AttributeTok{vjust =} \FloatTok{1.5}\NormalTok{) }\SpecialCharTok{+}
+    \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \FunctionTok{paste}\NormalTok{(}\StringTok{"🌍 Réseau commercial mondial {-}"}\NormalTok{, annee),}
+         \AttributeTok{subtitle =} \StringTok{"Graphique du réseau dirigé non pondéré (exportations)"}\NormalTok{) }\SpecialCharTok{+}
+    \FunctionTok{theme\_void}\NormalTok{()}
+\NormalTok{\}}
+
+\CommentTok{\# 🔍 Visualisation des graphes pour 1900, 1955, 2009}
+\FunctionTok{creer\_graphe\_reseau}\NormalTok{(trade\_clean, }\DecValTok{1900}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-14-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{creer\_graphe\_reseau}\NormalTok{(trade\_clean, }\DecValTok{1955}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: ggrepel: 21 unlabeled data points (too many overlaps). Consider
+## increasing max.overlaps
+\end{verbatim}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-14-2.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{creer\_graphe\_reseau}\NormalTok{(trade\_clean, }\DecValTok{2009}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: ggrepel: 166 unlabeled data points (too many overlaps). Consider
+## increasing max.overlaps
+\end{verbatim}
+
+\pandocbounded{\includegraphics[keepaspectratio]{Examen_visualisation_trade-networks_files/figure-latex/unnamed-chunk-14-3.pdf}}
+
+`
+
+\end{document}

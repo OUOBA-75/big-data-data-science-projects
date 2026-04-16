@@ -1,0 +1,19 @@
+# R
+.Rhistory
+.RData
+.Rproj.user
+
+# Data
+*.csv
+*.xlsx
+*.zip
+
+# Logs
+*.log
+
+# Outputs
+outputs/
+
+# OS
+.DS_Store
+Thumbs.db

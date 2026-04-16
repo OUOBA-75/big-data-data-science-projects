@@ -1,0 +1,172 @@
+---
+title: "Examen Final-Utilisation de R en Big Data"
+author: "OUOBA DJANDJOA"
+date: "2025-07-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(data.table)
+library(dplyr)
+library(tictoc)
+library(sparklyr)
+library(ranger)
+library(caret)
+library(ggplot2)
+```
+
+# Introduction
+
+Ce rapport présente les différentes étapes de l'examen final portant sur l'analyse et la modélisation de données massives issues du fichier `transactions.csv`.
+
+---
+
+# Partie 1 – Préparation et exploration
+
+```{r part1}
+# Chargement et comparaison des temps de lecture
+fichier_csv <- "C:/Users/ADKBUSER/Desktop/Visseho/Examen_utlisation_de_R_en_equipe_de_2/Data/transactions.csv"
+
+tic("Chargement avec fread")
+dt_data <- fread(fichier_csv)
+temps_fread <- toc(log = TRUE)[[1]]$toc - toc(log = TRUE)[[1]]$tic
+
+tic("Chargement avec read.csv")
+df_data <- read.csv(fichier_csv)
+temps_read_csv <- toc(log = TRUE)[[1]]$toc - toc(log = TRUE)[[1]]$tic
+
+# Tableau comparatif
+temps_chargement <- data.frame(
+  Methode = c("fread", "read.csv"),
+  Temps_sec = c(temps_fread, temps_read_csv)
+)
+print(temps_chargement)
+
+# Aperçu des données
+cat("Structure du jeu de données chargé avec fread :
+")
+str(dt_data)
+
+# Agrégation transactions par pays et catégorie
+agg1 <- dt_data[, .(
+  nb_transactions = .N,
+  montant_total = sum(purchase_amount, na.rm = TRUE)
+), by = .(country, product_category)]
+
+print(head(agg1))
+
+# Top 5 clients dépensiers
+top5_clients <- dt_data[, .(
+  depense_totale = sum(purchase_amount, na.rm = TRUE)
+), by = customer_id][order(-depense_totale)][1:5]
+
+print(top5_clients)
+
+# Sauvegarde
+fwrite(agg1, "agg_country_category.csv.gz", compress = "gzip")
+fwrite(top5_clients, "top5_clients.csv.gz", compress = "gzip")
+```
+
+---
+
+# Partie 2 – Traitement distribué avec Spark
+
+```{r part2}
+# Connexion Spark
+sc <- spark_connect(master = "local")
+
+# Copier les données dans Spark
+transactions_tbl <- copy_to(sc, dt_data, "transactions", overwrite = TRUE)
+
+# Création colonne mois
+transactions_tbl <- transactions_tbl %>%
+  mutate(month = substr(purchase_date, 1, 7))
+
+# Agrégation
+agg_spark <- transactions_tbl %>%
+  group_by(month, payment_method) %>%
+  summarise(total_amount = sum(purchase_amount, na.rm = TRUE), .groups = "drop")
+
+print(collect(head(agg_spark)))
+
+# Export CSV
+dir.create("outputs", showWarnings = FALSE)
+spark_write_csv(agg_spark, path = "outputs/agg_month_payment", mode = "overwrite")
+
+spark_disconnect(sc)
+```
+
+---
+
+# Partie 3 – Modélisation prédictive (Random Forest)
+
+```{r part3}
+# Préparation
+df_data <- as.data.frame(dt_data)
+cols_to_exclude <- c("transaction_id", "customer_id", "purchase_date")
+features <- setdiff(names(df_data), c("purchase_amount", cols_to_exclude))
+
+set.seed(123)
+index <- createDataPartition(df_data$purchase_amount, p = 0.7, list = FALSE)
+train <- df_data[index, ]
+test <- df_data[-index, ]
+
+formule <- as.formula(paste("purchase_amount ~", paste(features, collapse = " + ")))
+
+model_rf <- ranger(formule, data = train, importance = "impurity")
+
+pred <- predict(model_rf, data = test)$predictions
+
+rmse <- sqrt(mean((pred - test$purchase_amount)^2))
+r2 <- cor(pred, test$purchase_amount)^2
+
+cat("RMSE:", round(rmse, 3), "\n")
+cat("R²:", round(r2, 3), "\n")
+
+# Importance variables
+var_imp <- data.frame(
+  variable = names(model_rf$variable.importance),
+  importance = model_rf$variable.importance
+)
+
+ggplot(var_imp, aes(x = reorder(variable, importance), y = importance)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Importance des variables", x = "Variable", y = "Importance")
+```
+
+---
+
+# Partie 4 – Visualisation
+
+```{r part4}
+# Date conversion
+dt_data[, date := as.Date(purchase_date)]
+
+# Évolution temporelle des ventes
+vente_temps <- dt_data[, .(total = sum(purchase_amount, na.rm = TRUE)), by = date]
+
+ggplot(vente_temps, aes(x = date, y = total)) +
+  geom_line(color = "darkgreen") +
+  labs(title = "Évolution quotidienne des ventes", x = "Date", y = "Montant total")
+
+# Répartition par pays
+vente_pays <- dt_data[, .(total = sum(purchase_amount, na.rm = TRUE)), by = country]
+
+ggplot(vente_pays, aes(x = reorder(country, -total), y = total)) +
+  geom_col(fill = "coral") +
+  coord_flip() +
+  labs(title = "Montant total par pays", x = "Pays", y = "Montant")
+
+# Histogramme des montants d'achat
+ggplot(dt_data, aes(x = purchase_amount)) +
+  geom_histogram(bins = 50, fill = "purple", color = "white") +
+  labs(title = "Distribution des montants d'achat", x = "Montant", y = "Fréquence")
+```
+
+---
+
+# Conclusion
+
+Ce rapport a présenté une analyse complète de données massives, avec un traitement rapide, une modélisation efficace, et des visualisations claires permettant d’interpréter les résultats obtenus.

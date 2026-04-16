@@ -1,0 +1,694 @@
+---
+title: 'Examen visualisation: International Trade Network'
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+La taille et la structure des flux commerciaux internationaux varient
+considérablement au fil du temps. Cet exercice s'appuie en partie sur
+Luca De Benedictis et Lucia Tajoli. (2011). 'The World Trade
+Network.' *The World Economy*, 34:8, pp.1417-1454. Les données commerciales
+proviennent de Katherine Barbieri et Omar
+Keshk. (2012). *Correlates of War Project Trade Data Set*,
+  Version 3.0. et sont disponibles à : 
+  [http://correlatesofwar.org](http://correlatesofwar.org).
+  
+Le volume des biens échangés entre les pays a augmenté rapidement au cours du siècle dernier,
+à mesure que les progrès technologiques ont réduit le coût du transport
+et que les pays ont adopté des politiques commerciales plus libérales. Parfois, cependant,
+les flux commerciaux ont diminué en raison d'événements perturbateurs tels que des guerres majeures
+et l'adoption de politiques commerciales protectionnistes. Dans cet exercice,
+nous allons explorer certains de ces changements en examinant le réseau de
+commerce international sur plusieurs périodes. Le fichier de données
+`trade.csv` contient la valeur des exportations d'un pays vers
+un autre au cours d'une année donnée. Les noms et descriptions des variables de
+cet ensemble de données sont :
+
+ Name                 Description
+ -------------------- ----------------------------------------------------------
+ `country1`           Country name of exporter 
+ `country2`           Country name of importer
+ `year`               Year
+ `exports`            Total value of exports (in tens of millions of dollars)
+
+Les données sont données pour les années 1900, 1920, 1940, 1955, 1980, 2000 et 2009.
+
+
+## Question 1 
+
+Après avoir lu l'article, faites en un résumé succinct des objectifs et de la méthodologie. décrivez les principaux indicateurs de mesure des données de réseaux 
+
+REPONSE:
+L'objectif principal de l'article est d’analyser le commerce international à travers une approche de réseau. Au lieu de voir les échanges entre pays comme des données tabulaires classiques, les auteurs les modélisent comme un réseau dirigé où :
+
+Chaque pays est un nœud,
+
+Chaque flux commercial est un arc allant d’un pays exportateur vers un pays importateur.
+
+Cette approche permet de mieux comprendre la structure globale du système commercial mondial, ses dynamiques historiques (de 1950 à 2000) et les positions stratégiques des pays dans le réseau international.
+
+Méthodologie
+Modélisation du réseau :
+Les auteurs construisent pour chaque année un graphe dirigé, pondéré ou non, selon que l'on tient compte de la valeur des exportations ou uniquement de leur existence (0 ou 1).
+
+Construction des matrices d’adjacence :
+Ils créent des matrices où chaque cellule (i,j) représente un lien d’exportation du pays i vers le pays j.
+
+Analyse temporelle :
+L’étude est menée pour plusieurs années clefs (notamment 1950, 1980 et 2000), pour observer les changements structurels du commerce mondial.
+
+Mesures de réseau :
+Divers indicateurs issus de la théorie des graphes sont utilisés pour quantifier la structure du réseau et le rôle des pays.
+
+Principaux indicateurs de réseau utilisés
+Densité du réseau (network density) :
+
+Proportion de liens effectivement existants par rapport au nombre maximal possible.
+
+Donne une idée du niveau global de connectivité du réseau.
+
+Degré (degree centrality) :
+
+Nombre de partenaires commerciaux d’un pays.
+
+On distingue le degré entrant (nombre d’importateurs) et le degré sortant (nombre d’exportateurs).
+
+
+Centralité d’intermédiarité (betweenness centrality) :
+
+Mesure combien de fois un pays agit comme pont entre d'autres pays dans les chemins commerciaux les plus courts.
+
+Indique les pays-clés dans la circulation mondiale des biens.
+
+
+Proximité (closeness centrality) :
+
+Mesure l’accessibilité d’un pays aux autres dans le réseau.
+
+Plus un pays est « proche » de tous les autres, plus il peut rapidement échanger.
+
+
+Composantes fortement connexes :
+
+Sous-groupes de pays qui échangent entre eux de manière réciproque.
+
+Permet d’identifier des blocs régionaux ou géopolitiques (ex : Europe de l’Ouest, ex-bloc soviétique).
+
+
+Conclusion
+
+L’article applique une approche de réseau pour analyser la structure du commerce international entre pays, en mesurant la densité, la centralité (degré, intermédiarité, proximité) et les composantes du réseau commercial mondial sur plus d’un demi-siècle.
+
+
+
+
+## Question 2 
+
+On n'a pas les mêmes pays chaque année. Certains pays disparaissent alors que d'autres naissent, surtout lors de la dislocation du bloc soviétique. Créer une list qui fait la liste des pays intervenus dans le commerce chaque année
+
+```{r}
+# Charger les données
+
+library(readr)
+trade <- read_csv("data/trade.csv")
+
+
+# Remplacer les NA dans la variable exports par 0
+trade$exports[is.na(trade$exports)] <- 0
+
+
+# Créer une liste des pays impliqués dans le commerce pour chaque année
+library(dplyr)
+
+pays_par_annee <- trade %>%
+  group_by(year) %>%
+  summarise(
+    pays = list(sort(unique(c(country1, country2)))),
+    nb_pays = length(unique(c(country1, country2)))
+  )
+
+
+
+library(openxlsx)
+
+# Exporter le tableau en Excel
+write.xlsx(pays_par_annee, "data/pays_par_annee.xlsx")
+
+# Afficher le résultat
+print(pays_par_annee)
+
+```
+
+
+
+## Question 3
+
+Maintenant, on va regarder uniquement les données de 1900. Créer une nouvelle base de données uniquement avec cette année. Quelle est la somme totale des exportations des états unis cette année. Quelle est la part de cette exportation vers tous les pays avec lesquels les États unis ont commercé cette année? Présenter un graphique qui résume votre réponse à la dernière question.
+
+```{r}
+# 1. Filtrer les données pour l'année 1900
+data_1900 <- trade %>% filter(year == 1900)
+
+# 2. Extraire les exportations depuis les États-Unis
+usa_exports_1900 <- data_1900 %>% 
+  filter(country1 == "United States of America")
+
+# 3. Calculer la somme totale des exportations américaines en 1900
+total_exports_usa <- sum(usa_exports_1900$exports, na.rm = TRUE)
+
+# 4. Calculer la part de chaque pays importateur dans les exportations US
+usa_exports_1900 <- usa_exports_1900 %>%
+  mutate(
+    part = exports / total_exports_usa  # proportion des exportations par pays
+  )
+
+# 5. Graphique : part des exportations par pays importateur (barplot)
+library(ggplot2)
+
+ggplot(usa_exports_1900, aes(x = reorder(country2, -part), y = part)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(
+    title = "Part des exportations américaines par pays en 1900",
+    x = "Pays importateur",
+    y = "Part (%)"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```
+
+```{r}
+# Garder uniquement les 10 premiers pays par valeur d’exportation
+top10_usa_exports <- usa_exports_1900 %>%
+  arrange(desc(exports)) %>%
+  slice(1:10)
+
+# Graphique plus lisible (Top 10 uniquement)
+ggplot(top10_usa_exports, aes(x = reorder(country2, -part), y = part)) +
+  geom_bar(stat = "identity", fill = "darkgreen") +
+  labs(
+    title = "Top 10 des partenaires commerciaux des USA en 1900",
+    x = "Pays importateur",
+    y = "Part (%)"
+  ) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```
+
+
+
+
+## Question 4
+
+Une meilleure représentation serait de faire le treemap. Présenter l'information avec ce graphique en indiquant clairement les pays et les continents en jeu.
+
+```{r}
+# Charger les bibliothèques nécessaires
+library(dplyr)
+library(ggplot2)
+library(treemapify)
+library(countrycode)
+
+# 1. Reprendre les exportations des USA en 1900 (déjà filtrées précédemment)
+usa_exports_1900 <- trade %>% filter(year == 1900, country1 == "United States of America")
+
+# Correction manuelle des noms historiques
+usa_exports_1900 <- usa_exports_1900 %>%
+  mutate(
+    country2 = case_when(
+      country2 == "Austria-Hungary" ~ "Austria",       # ou "Hungary" selon ton choix
+      country2 == "Yugoslavia" ~ "Serbia",             # ou "Bosnia", "Croatia", etc.
+      TRUE ~ country2
+    ),
+    continent = countrycode(country2, origin = "country.name", destination = "continent")
+  )
+
+
+# 2. Ajouter une colonne "continent" basée sur les noms de pays importateurs
+usa_exports_1900 <- usa_exports_1900 %>%
+  mutate(
+    continent = countrycode(country2, origin = "country.name", destination = "continent")
+  )
+
+# 3. Supprimer les lignes sans continent identifié
+usa_exports_1900 <- usa_exports_1900 %>% filter(!is.na(continent))
+
+# 4. Créer le treemap
+ggplot(usa_exports_1900, aes(
+  area = exports, fill = continent, label = country2, subgroup = continent
+)) +
+  geom_treemap() +
+  geom_treemap_text(colour = "white", place = "centre", grow = TRUE, reflow = TRUE) +
+  geom_treemap_subgroup_border(color = "black") +
+  geom_treemap_subgroup_text(place = "centre", grow = TRUE, alpha = 0.5, colour = "black") +
+  labs(title = "Treemap des exportations américaines en 1900", fill = "Continent") +
+  theme(legend.position = "bottom")
+
+```
+
+```{r}
+# 1. Sélection des 20 principaux pays importateurs par valeur exportée
+top20_usa_exports <- usa_exports_1900 %>%
+  arrange(desc(exports)) %>%
+  slice(1:20)
+
+# Exporter le tableau en Excel
+write.xlsx(top20_usa_exports, "data/top20_usa_exports.xlsx")
+
+# 2. Treemap avec continents et pays (Top 20)
+ggplot(top20_usa_exports, aes(
+  area = exports, fill = continent, label = country2, subgroup = continent
+)) +
+  geom_treemap() +
+  geom_treemap_text(colour = "white", place = "centre", grow = TRUE, reflow = TRUE) +
+  geom_treemap_subgroup_border(color = "black") +
+  geom_treemap_subgroup_text(place = "centre", grow = TRUE, alpha = 0.5, colour = "black") +
+  labs(title = "Top 20 des pays importateurs des États-Unis en 1900 (Treemap)",
+       fill = "Continent") +
+  theme(legend.position = "bottom")
+
+library(openxlsx)
+
+
+```
+
+
+## Question 5
+
+Maintenant, considérer les données des années 1900 et 2009.
+Comparer à partir d'un treemap l'évolution du commerce international entre ces deux dates. Utiliser ecore une fois l'indicateurs du pourcentage des exportations. Faites attention, entre temps certains pays int disparu et d;autres sont apparus. Il faut les inclure correctement dans leur continent.
+
+```{r}
+# Charger les bibliothèques utiles
+library(dplyr)
+library(ggplot2)
+library(treemapify)
+library(countrycode)
+
+# 1. Filtrer les années 1900 et 2009
+data_2years <- trade %>% filter(year %in% c(1900, 2009))
+
+# 2. Remplacer les NA par 0 pour éviter les erreurs
+data_2years$exports[is.na(data_2years$exports)] <- 0
+
+# 3. Calculer les exportations totales par pays exportateur pour chaque année
+export_by_country <- data_2years %>%
+  group_by(year, country1) %>%
+  summarise(total_exports = sum(exports), .groups = "drop")
+
+# 4. Ajouter le pourcentage d'exportation mondiale pour chaque année
+export_by_country <- export_by_country %>%
+  group_by(year) %>%
+  mutate(share = total_exports / sum(total_exports))
+
+# 5. Ajouter le continent correspondant à chaque pays exportateur
+export_by_country <- export_by_country %>%
+  mutate(
+    continent = countrycode(country1, origin = "country.name", destination = "continent"),
+    country1 = case_when(
+      country1 == "Austria-Hungary" ~ "Austria",
+      country1 == "Yugoslavia" ~ "Serbia",
+      TRUE ~ country1
+    )
+  )
+
+# Supprimer les lignes avec continent inconnu
+export_by_country <- export_by_country %>% filter(!is.na(continent))
+
+# 6. Créer le treemap comparatif
+ggplot(export_by_country, aes(
+  area = share, fill = continent, label = country1, subgroup = continent
+)) +
+  geom_treemap() +
+  geom_treemap_text(colour = "white", place = "centre", grow = TRUE, reflow = TRUE) +
+  geom_treemap_subgroup_border(color = "black") +
+  geom_treemap_subgroup_text(place = "centre", grow = TRUE, alpha = 0.5, colour = "black") +
+  facet_wrap(~ year) +
+  labs(
+    title = "Comparaison du commerce international par pays (1900 vs 2009)",
+    fill = "Continent"
+  ) +
+  theme(legend.position = "bottom")
+
+```
+### Interprétation synthétique du treemap comparatif (1900 et 2009)
+
+Le treemap comparatif révèle une transformation profonde du commerce mondial entre 1900 et 2009. En 1900, les exportations sont fortement concentrées autour des grandes puissances occidentales (Royaume-Uni, Allemagne, France, États-Unis), avec quelques partenaires secondaires en Amérique latine. En 2009, le paysage commercial est nettement plus multipolaire : aux côtés des États-Unis, on observe la montée en puissance de la Chine, de l’Allemagne réunifiée, du Japon, de la Corée du Sud et de plusieurs pays émergents d’Asie et d’Europe de l’Est. Cette évolution reflète une diversification géographique des échanges, une réallocation des chaînes de production vers l’Asie, et les conséquences géopolitiques majeures du XXe siècle (disparition d’États, indépendances, réunifications). Certains anciens pôles (Portugal, Belgique, Espagne) reculent en importance relative. En somme, le treemap met en lumière le passage d’un commerce dominé par quelques empires à un réseau mondialisé, dense et multipolaire, révélateur de l’essor des économies émergentes et de la reconfiguration des flux mondiaux.
+
+
+
+
+
+## Question 6: Bonus
+
+
+Les données dont nous disposons sont des données de réseau. Présenter les graphiques de la page 1433 de l'article. Pour ce faire, suivez les étapes suivantes:
+
+1. Nous commençons par analyser le commerce international comme un réseau non pondéré et dirigé. Pour chaque année de l'ensemble de données, créez une matrice d'adjacence dont l'entrée $(i,j)$ est égale à 1 si le pays $i$ exporte vers le pays $j$. Si cette exportation est nulle, alors l'entrée est égale à 0. Nous supposons que les données manquantes, indiquées par «NA», représentent un commerce nul. Tracez la «densité du réseau», qui est définie au fil du temps comme suit:
+
+  $$
+    \text{network density}  =  \frac{\text{number of edges}}{\text{number of potential edges}}
+  $$
+
+La fonction `graph.density` du package igraph (https://igraph.org/) peut calculer cette mesure à partir d'une matrice d'adjacence. cet exercice est une exploration dans les données de réseau avec igraph. Interprétez le résultat.
+
+2. Présenter le graphique
+
+3. Pour les années 1900, 1955 et 2009, calculez les mesures de
+centralité en fonction du degré, de l'intermédiarité et de la proximité (en fonction du
+degré total) pour chaque année. Pour chaque année, dressez la liste des cinq pays
+qui ont les valeurs les plus élevées de ces mesures de centralité. Comment les
+pays figurant sur les listes évoluent-ils au fil du temps? Commentez brièvement les
+résultats.
+
+
+```{r}
+### Partie 1 (densité du réseau)
+# Charger les bibliothèques
+library(igraph)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+
+trade$exports[is.na(trade$exports)] <- 0  # remplacer les NA par 0
+
+# Liste des années disponibles
+years <- sort(unique(trade$year))
+
+# Initialiser un tableau pour stocker les densités
+densities <- data.frame()
+
+for (yr in years) {
+  # Filtrer les données pour l'année en cours
+  data_year <- trade %>% filter(year == yr)
+  
+  # Créer la matrice d'adjacence binaire : 1 si export > 0
+  edge_list <- data_year %>%
+    filter(exports > 0) %>%
+    select(from = country1, to = country2)
+  
+  # Créer le graphe dirigé
+  g <- graph_from_data_frame(edge_list, directed = TRUE)
+  
+  # Calculer la densité du réseau
+  dens <- edge_density(g)
+  
+  # Ajouter au tableau
+  densities <- rbind(densities, data.frame(year = yr, density = dens))
+}
+
+# Visualiser la densité du réseau au fil du temps
+ggplot(densities, aes(x = year, y = density)) +
+  geom_line(color = "steelblue", size = 1.2) +
+  geom_point(color = "darkred", size = 2) +
+  labs(title = "Densité du réseau commercial international (1900–2009)",
+       x = "Année", y = "Densité du réseau") +
+  theme_minimal()
+
+```
+
+```{r}
+### Autre graphique
+
+library(ggplot2)
+
+ggplot(densities, aes(x = year, y = density)) +
+  geom_line(color = "steelblue", size = 1.3) +
+  geom_point(color = "darkred", size = 3) +
+  geom_text(aes(label = round(density, 3)), vjust = -0.8, size = 4) +
+  labs(title = "Évolution de la densité du réseau commercial mondial",
+       x = "Année", y = "Densité du réseau") +
+  theme_minimal(base_size = 14)
+
+```
+
+```{r}
+### Barplot clair par année
+
+ggplot(densities, aes(x = factor(year), y = density, fill = density)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = round(density, 3)), vjust = -0.5, size = 4) +
+  scale_fill_gradient(low = "#FFDDC1", high = "#2C3E50") +
+  labs(title = "Densité du réseau commercial international (par année)",
+       x = "Année", y = "Densité") +
+  theme_minimal(base_size = 14)
+
+```
+
+
+
+
+```{r}
+### Mesures de centralité réseau
+# Années à analyser
+target_years <- c(1900, 1955, 2009)
+
+# Initialiser un tableau de résultats
+centrality_results <- list()
+
+# Boucle sur les années cibles
+for (yr in target_years) {
+  # Filtrer les données pour l’année
+  data_year <- trade %>%
+    filter(year == yr & exports > 0) %>%
+    select(from = country1, to = country2)
+  
+  # Construire le graphe dirigé
+  g <- graph_from_data_frame(data_year, directed = TRUE)
+  
+  # Calculer les centralités
+  degree_cent <- degree(g, mode = "all")
+  between_cent <- betweenness(g, normalized = TRUE)
+  close_cent <- closeness(g, normalized = TRUE)
+  
+  # Créer une table avec les résultats
+  centrality_df <- data.frame(
+    country = names(degree_cent),
+    year = yr,
+    degree = degree_cent,
+    betweenness = between_cent,
+    closeness = close_cent
+  )
+  
+  # Garder seulement les top 5 pour chaque mesure
+  top5_degree <- centrality_df %>% arrange(desc(degree)) %>% slice(1:5)
+  top5_between <- centrality_df %>% arrange(desc(betweenness)) %>% slice(1:5)
+  top5_close <- centrality_df %>% arrange(desc(closeness)) %>% slice(1:5)
+  
+  # Stocker dans une liste
+  centrality_results[[as.character(yr)]] <- list(
+    degree = top5_degree,
+    betweenness = top5_between,
+    closeness = top5_close
+  )
+}
+
+# Affichage des résultats
+centrality_results
+
+```
+
+    
+    
+    
+    
+    
+```{r}
+library(tidyverse)
+library(igraph)
+
+# Étape 1 : Nettoyage des données (remplace NA par 0 dans exports)
+trade_clean <- trade %>%
+  select(country1, country2, year, exports) %>%
+  mutate(exports = ifelse(is.na(exports), 0, exports))
+library(tidyverse)
+library(igraph)
+
+# Étape 2 corrigée : calcul densité avec gestion des doublons
+densites <- trade_clean %>%
+  group_by(year) %>%
+  group_split() %>%
+  map_dfr(function(df_year) {
+    annee <- unique(df_year$year)
+    
+    # 1. Créer valeur binaire
+    df_bin <- df_year %>%
+      mutate(value = ifelse(exports > 0, 1, 0)) %>%
+      group_by(country1, country2) %>%         #  Aggrégation si doublons
+      summarise(value = max(value), .groups = "drop")
+    
+    # 2. Création matrice d’adjacence
+    mat <- df_bin %>%
+      pivot_wider(names_from = country2, values_from = value, values_fill = 0) %>%
+      column_to_rownames("country1") %>%
+      as.matrix()
+    
+    # 3. Graphe dirigé
+    g <- graph_from_adjacency_matrix(mat, mode = "directed", diag = FALSE)
+    
+    # 4. Densité du graphe
+    tibble(annee = annee, densite = graph.density(g))
+  })
+
+ggplot(densites, aes(x = annee, y = densite)) +
+  geom_line(color = "#2b8cbe", size = 1.2) +
+  geom_point(color = "#f03b20", size = 2) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = " Densité du réseau commercial international (1900–2009)",
+    x = "Année",
+    y = "Densité du réseau"
+  )
+
+
+```
+
+
+
+
+
+
+```{r}
+calculer_centralites <- function(df, annee_cible) {
+  #  Filtrage de l’année cible + binarisation des flux
+  df_filtre <- df %>%
+    filter(year == annee_cible) %>%
+    mutate(value = ifelse(exports > 0, 1, 0)) %>%
+    group_by(country1, country2) %>%
+    summarise(value = max(value), .groups = "drop")
+  
+  #  Création de la matrice d’adjacence
+  mat <- df_filtre %>%
+    pivot_wider(names_from = country2, values_from = value, values_fill = 0) %>%
+    column_to_rownames("country1") %>%
+    as.matrix()
+  
+  #  Création du graphe dirigé
+  g <- graph_from_adjacency_matrix(mat, mode = "directed", diag = FALSE)
+  
+  #  Calcul des trois centralités
+  deg <- degree(g, mode = "all")
+  bet <- betweenness(g, directed = TRUE)
+  clo <- closeness(g, mode = "all")
+  
+  tibble(pays = names(deg), degre = deg, intermediarite = bet, proximite = clo) %>%
+    mutate(annee = annee_cible) %>%
+    pivot_longer(cols = c(degre, intermediarite, proximite), names_to = "mesure", values_to = "valeur") %>%
+    group_by(annee, mesure) %>%
+    slice_max(order_by = valeur, n = 5) %>%
+    arrange(annee, mesure, desc(valeur))
+}
+
+resultats_centralites <- map_dfr(c(1900, 1955, 2009), ~calculer_centralites(trade_clean, .x))
+
+
+# Exporter le tableau en Excel
+write.xlsx(resultats_centralites, "data/resultats_centralites.xlsx")
+
+resultats_centralites %>%
+  select(annee, mesure, pays, valeur) %>%
+  arrange(annee, mesure, desc(valeur))
+
+
+```
+
+
+
+```{r}
+library(ggplot2)
+
+#  Nettoyage pour une présentation claire
+resultats_centralites$mesure <- recode(resultats_centralites$mesure,
+  degre = " Degré",
+  intermediarite = " Intermédiarité",
+  proximite = " Proximité"
+)
+
+#  Graphe en barres, groupé par année et mesure
+ggplot(resultats_centralites, aes(x = reorder(pays, valeur), y = valeur, fill = pays)) +
+  geom_col(show.legend = FALSE) +
+  facet_grid(mesure ~ annee, scales = "free") +
+  coord_flip() +
+  labs(
+    title = "️ Mesures de centralité du commerce international (1900, 1955, 2009)",
+    x = "Pays",
+    y = "Valeur de la centralité"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(strip.text = element_text(face = "bold", color = "black"))
+
+```
+
+
+
+
+```{r}
+library(igraph)
+library(tidyverse)
+library(ggraph)
+
+#  Fonction pour créer le graphe pour une année spécifique
+creer_graphe_reseau <- function(data, annee) {
+  # Filtrage de l'année
+  df_annee <- data %>%
+    filter(year == annee) %>%
+    mutate(value = ifelse(exports > 0, 1, 0)) %>%
+    filter(value == 1)
+  
+  # Création du graphe dirigé non pondéré
+  graphe <- graph_from_data_frame(df_annee[, c("country1", "country2")], directed = TRUE)
+  
+  # Visualisation du graphe avec ggraph
+  ggraph(graphe, layout = "fr") +  # "fr" = Fruchterman-Reingold layout
+    geom_edge_link(alpha = 0.3, arrow = arrow(length = unit(2, 'mm')), end_cap = circle(2, 'mm')) +
+    geom_node_point(size = 3, color = "#2b8cbe") +
+    geom_node_text(aes(label = name), repel = TRUE, size = 3, vjust = 1.5) +
+    labs(title = paste(" Réseau commercial mondial -", annee),
+         subtitle = "Graphique du réseau dirigé non pondéré (exportations)") +
+    theme_void()
+}
+
+#  Visualisation des graphes pour 1900, 1955, 2009
+creer_graphe_reseau(trade_clean, 1900)
+creer_graphe_reseau(trade_clean, 1955)
+creer_graphe_reseau(trade_clean, 2009)
+
+```
+
+
+
+
+
+
+
+
+
+
+`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

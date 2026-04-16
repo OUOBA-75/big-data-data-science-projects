@@ -1,0 +1,287 @@
+---
+title: 'Exercice 1: Visualisation des données'
+author: "Visseho Adjiwanou, PhD."
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  ioslides_presentation: default
+  slidy_presentation: default
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+AUTEUR: OUOBA DJANDJOA
+
+
+
+
+
+## Exercice 1
+
+Vous utiliserez le fichier de données **mig** fourni sous format **.csv.**
+
+1. Importer le fichier **mig.csv** dans RStudio.
+
+2. Créer un graphique à bandes empilées représentant la fréquence par province et territoires (**location**) selon le type de migration (**type**). Colorier les bandes selon le type de migration, labéliser convenablement les axes et donner un titre au graphique.
+```{r}
+
+# Importation des données
+# Spécifie le chemin complet si nécessaire
+library(readr)  # pour read_csv()
+
+
+df <- read_csv("data/mig.csv")
+
+
+# Vérifie le contenu
+head(df)
+```
+`
+
+
+
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+# Créer un graphique à bandes empilées
+ggplot(df, aes(x = location, y = persons, fill = type)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(
+    title = "Fréquence des migrations par province et territoire",
+    x = "Province ou territoire",
+    y = "Nombre de personnes",
+    fill = "Type de migration"
+  ) +
+  theme_fivethirtyeight() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+#### Barres groupées côte à côte (comparaison claire)
+
+ggplot(df, aes(x = location, y = persons, fill = type)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+  labs(
+    title = "Comparaison des types de migrations par province/territoire",
+    x = "Province ou territoire",
+    y = "Nombre de personnes",
+    fill = "Type de migration"
+  ) +
+  theme_minimal(base_size = 14) +
+  scale_fill_brewer(palette = "Set2") +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
+
+```
+
+
+
+
+
+
+```{r}
+#### Barres empilées en proportion (lecture relative)
+
+ggplot(df, aes(x = location, y = persons, fill = type)) +
+  geom_bar(stat = "identity", position = "fill") +  # proportion
+  labs(
+    title = "Répartition proportionnelle des types de migration",
+    x = "Province ou territoire",
+    y = "Proportion",
+    fill = "Type de migration"
+  ) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme_minimal(base_size = 14) +
+  scale_fill_brewer(palette = "Paired") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+####  Barres horizontales (plus lisible si beaucoup de régions)
+
+
+ggplot(df, aes(x = persons, y = reorder(location, persons), fill = type)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Nombre de migrations par province/territoire",
+    x = "Nombre de personnes",
+    y = "Province ou territoire",
+    fill = "Type de migration"
+  ) +
+  theme_minimal(base_size = 14) +
+  scale_fill_brewer(palette = "Set3") +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+```
+
+
+
+```{r}
+ggplot(df, aes(x = location, y = persons, fill = type)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(
+    title = "Fréquence des migrations par province et territoire",
+    subtitle = "Répartition par type de migration",
+    x = "Province ou territoire",
+    y = "Nombre de personnes",
+    fill = "Type de migration"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r}
+library(dplyr)
+
+# Total par province
+df_tot <- df %>%
+  group_by(location) %>%
+  summarise(total = sum(persons))
+
+ggplot(df_tot, aes(x = reorder(location, total), y = total)) +
+  geom_segment(aes(xend = location, y = 0, yend = total), color = "grey70", size = 1.2) +
+  geom_point(color = "#2b8cbe", size = 4) +
+  coord_flip() +
+  labs(title = "Total des migrations par province/territoire",
+       x = "Province ou territoire", y = "Nombre de personnes") +
+  theme_minimal(base_size = 14)
+
+```
+
+
+
+
+
+
+```{r}
+library(dplyr)
+
+df_treemap <- df %>%
+  filter(!is.na(persons), persons > 0, !is.na(type), !is.na(location)) %>%
+  mutate(
+    type = factor(type),
+    location = factor(location)
+  )
+
+
+library(ggplot2)
+library(treemapify)
+
+ggplot(df_treemap, aes(area = persons, fill = location, label = location)) +
+  geom_treemap(alpha = 0.9) +
+  geom_treemap_text(colour = "white", place = "centre", grow = TRUE, fontface = "bold", min.size = 6) +
+  facet_wrap(~type) +
+  scale_fill_brewer(palette = "Set3") +
+  labs(
+    title = "Répartition des migrations par province selon le type",
+    fill = "Province ou territoire"
+  ) +
+  theme_minimal(base_size = 13)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+## Exercice 2
+
+**Youtube_dataset_all_dataScience_channels.csv** est un ensemble de données qui fournit un aperçu détaillé des chaînes YouTube dédiées à la science des données et à l'analyse. Il comprend 22862 lignes, chacune représentant une vidéo unique avec différentes mesures d'engagement et détails de publication. L'ensemble de données vise à aider les chercheurs, les analystes de données et les passionnés à explorer et à analyser les tendances au sein de la communauté de la science des données sur YouTube.
+
+
+https://www.kaggle.com/datasets/abhishek0032/youtube-dataset-all-data-scienceanalyst-channels
+
+
+# A. Questions de visualisation
+
+1. Comment représenteriez-vous l’évolution mensuelle du nombre de vues total par chaîne ?
+
+`
+
+
+4. Proposez un moyen d’identifier visuellement les vidéos “virales” (à fort ratio likes/vues ou commentaires/vues).
+
+
+
+
+
+
+10. Proposez un graphique combinant barres et lignes pour mettre en valeur à la fois la fréquence de publication et l’engagement moyen par type.
+
+
+
+
+
+
+
+
+
+
+# B. Questions d’utilisation d’une Shiny app
+
+1. Quels contrôles (`selectInput`, `sliderInput`, `checkboxGroupInput`, etc.) incluriez-vous pour permettre à l’utilisateur de choisir une ou plusieurs chaînes à analyser ?
+
+
+
+
+2. Quels contrôles incluriez-vous pour permettre à l’utilisateur de sélectionner une plage de dates précise ?
+
+
+
+
+
+
+
+
+5. Quels conseils donneriez-vous pour optimiser les temps de chargement lorsque l’utilisateur manipule plusieurs filtres simultanément ?
+
+
+
+6. Proposez un agencement de la page Shiny combinant un panneau de contrôle, deux visualisations côte à côte et un tableau interactif.
+
+
+
+
+
+
+7. Comment implémenteriez-vous un module Shiny pour comparer dynamiquement deux chaînes sélectionnées par l’utilisateur ?
+
+`
+
+
+
+
+
+
+
+
+
+
+
+
+## 6- Quel élément graphique (barres horizontales, dot plot, etc.) choisir pour faciliter la comparaison ?
+
+
+
+
+

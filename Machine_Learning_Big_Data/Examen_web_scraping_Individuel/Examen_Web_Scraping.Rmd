@@ -1,0 +1,849 @@
+---
+title: 'Examen'
+author: "Visseho Adjiwanou, PhD."
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+# Exercice 1: Individuel
+
+Le site web des Nations Unies sur les SDG (sustainable development goals), en Français objectifs du développement durable (ODD) vous donne les informations sur les 17 objectifs.
+
+le lien du site est le suivant: https://sdgs.un.org/fr/goals
+
+1. Scraper ce site et collecter les informations dans une base de données sur :
+- le titre de l'objectif
+- le nombre de cibles
+- le nombre d’évènements
+- le nombre de publications
+- le nombre d'initiatives
+
+Par ailleurs, vous avez toutes les publications concernant ces objectifs. Voici le lien du site: https://sdgs.un.org/publications
+
+
+```{r}
+library(rvest)        #  Permet de lire et extraire des données HTML depuis des pages web (web scraping principal)
+library(dplyr)        #  Pour manipuler les données : filtrer, sélectionner, transformer, agréger, etc.
+library(stringr)      #  Pour traiter les chaînes de caractères : détection, nettoyage, correspondance de mots-clés
+library(tibble)       #  Pour créer et gérer des dataframes améliorés (plus lisibles et robustes que data.frame)
+
+# 📥 Lire la page des ODD (en version française ici, fonctionne aussi)
+url <- "https://sdgs.un.org/fr/goals"
+page <- read_html(url)
+
+#  Extraire tous les blocs d'objectifs
+cards <- page %>% html_elements(".card-body")
+
+# 🔄 Boucle corrigée : insensible à la casse et aux accents
+results <- lapply(cards, function(card) {
+  numero <- card %>% html_element(".goal-number") %>% html_text(trim = TRUE)
+  titre <- card %>% html_element(".goal-title") %>% html_text(trim = TRUE)
+  description <- card %>% html_element(".goal-text") %>% html_text(trim = TRUE)
+
+  chiffres <- card %>% html_elements(".number") %>% html_text(trim = TRUE) %>% as.integer()
+  labels <- card %>% html_elements(".feature") %>% html_text(trim = TRUE)
+
+  # ✅ Nettoyer les accents et passer en minuscule pour comparer de façon robuste
+  labels_clean <- stringi::stri_trans_general(labels, "Latin-ASCII") %>% tolower()
+
+  # ✅ Créer un tableau avec correspondances sécurisées
+  tibble(
+    numero = numero,
+    titre = titre,
+    description = description,
+    nb_cibles = chiffres[which(labels_clean == "cibles")],
+    nb_evenements = chiffres[which(labels_clean %in% c("evenements", "evenements"))],
+    nb_publications = chiffres[which(labels_clean == "publications")],
+    nb_initiatives = chiffres[which(labels_clean == "initiatives")]
+  )
+})
+
+# 🧮 Fusion
+base_odd <- bind_rows(results)
+
+# Exporter le tableau en Excel
+write.xlsx(base_odd, "data/base_odd.xlsx")
+
+# 👀 Aperçu
+print(base_odd)
+
+# 💾 Sauvegarde (optionnelle)
+write.csv(base_odd, "base_ODD.csv", row.names = FALSE)
+
+```
+
+
+
+```{r}
+#### Barplot du nombre de cibles par ODD: Visualiser quels ODD ont le plus de cibles associées.
+
+library(ggplot2)
+
+ggplot(base_odd, aes(x = reorder(titre, -nb_cibles), y = nb_cibles)) +
+  geom_bar(stat = "identity", fill = "#2E86C1") +
+  coord_flip() +
+  labs(title = "Nombre de cibles par ODD",
+       x = "Objectif",
+       y = "Nombre de cibles") +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+#### Montrer quels objectifs ont reçu le plus d’attention via des publications.
+
+ggplot(base_odd, aes(x = reorder(titre, -nb_publications), y = nb_publications)) +
+  geom_bar(stat = "identity", fill = "#28B463") +
+  coord_flip() +
+  labs(title = "Nombre de publications par ODD",
+       x = "Objectif",
+       y = "Nombre de publications") +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+#### Comparer visuellement les 3 types de contributions.
+
+library(tidyr)
+
+# Réorganisation en format long
+base_long <- base_odd %>%
+  select(titre, nb_evenements, nb_publications, nb_initiatives) %>%
+  pivot_longer(cols = -titre, names_to = "Type", values_to = "Valeur")
+
+ggplot(base_long, aes(x = reorder(titre, -Valeur), y = Valeur, fill = Type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  labs(title = "Événements, publications et initiatives par ODD",
+       x = "Objectif",
+       y = "Valeur") +
+  scale_fill_manual(values = c("#F39C12", "#2980B9", "#1ABC9C")) +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+#### Pie chart (camembert) du total des initiatives par ODD: Représenter la répartition des initiatives entre les ODD
+
+library(scales)
+
+ggplot(base_odd, aes(x = "", y = nb_initiatives, fill = titre)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Répartition des initiatives par ODD") +
+  theme_void() +
+  theme(legend.position = "right") +
+  scale_fill_manual(values = colorRampPalette(RColorBrewer::brewer.pal(8, "Set3"))(17))
+
+```
+
+
+
+
+
+
+2. Votre objectif est de scraper ce site et de présenter dans une seconde base de données claire les titres de ces publications. Remarquez qu'il y a jusqu'à 113 pages. Cette base de données doit comporter deux colonnes, la colonne 1 pour l'identification, allant de 1 au nombre de publication, la deuxième, le titre.
+
+```{r}
+# Chargement des packages nécessaires
+library(rvest)
+library(dplyr)
+library(purrr)
+library(stringr)
+library(readr)
+
+# Fonction pour extraire les titres d'une page
+extraire_titres <- function(page_num) {
+  url <- paste0("https://sdgs.un.org/publications?page=", page_num)
+  
+  # Lire le contenu HTML de la page
+  page <- read_html(url)
+  
+  # Extraire les titres des publications
+  titres <- page %>%
+    html_elements("h4.card-title") %>% 
+    html_text(trim = TRUE)
+  
+  return(titres)
+}
+
+# Scraper les 113 pages (de 0 à 112)
+titres_liste <- map(0:112, extraire_titres)
+
+# Aplatir la liste et créer un data frame
+titres_df <- unlist(titres_liste) %>%
+  tibble(titre = .) %>%
+  mutate(identifiant = row_number()) %>%
+  select(identifiant, titre)
+
+# Sauvegarder en CSV
+write_csv(titres_df, "publications_ODD.csv")
+
+# Exporter le tableau en Excel
+write.xlsx(titres_df, "data/titres_df.xlsx")
+
+# Confirmation
+cat("Scraping terminé : fichier 'publications_ODD.csv' créé avec", nrow(titres_df), "publications.\n")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3. Maintenant, à partir des titres, essayer de prédire l'objectif en question. Mettez cette information dans la base de données (avec la nouvelle variable : objectifs)
+
+
+
+
+
+
+
+
+
+
+```{r}
+library(dplyr)
+library(stringr)
+
+# 1. Dictionnaire de mots-clés pour chaque ODD
+mots_cles_odd <- list(
+  "1" = c("pauvre", "pauvreté", "poverty"),
+  "2" = c("faim", "nutrition", "food", "agriculture"),
+  "3" = c("santé", "health", "bien-être", "maladie"),
+  "4" = c("éducation", "school", "learning", "literacy"),
+  "5" = c("femmes", "égalité", "gender", "genre"),
+  "6" = c("eau", "assainissement", "water", "sanitation"),
+  "7" = c("énergie", "énergétique", "energy", "electricity"),
+  "8" = c("emploi", "croissance", "travail", "growth", "job"),
+  "9" = c("industrie", "infrastructure", "innovation"),
+  "10" = c("inégalités", "inequality", "discrimination"),
+  "11" = c("villes", "habitat", "urban", "city"),
+  "12" = c("consommation", "production", "durable", "waste"),
+  "13" = c("climat", "climate", "émissions", "changement"),
+  "14" = c("océan", "mer", "marine", "sea", "aquatique"),
+  "15" = c("forêt", "biodiversité", "terre", "éco", "forest"),
+  "16" = c("justice", "paix", "sécurité", "institution"),
+  "17" = c("partenariat", "partnership", "coopération", "financement")
+)
+
+# 2. Fonction pour prédire l'ODD à partir d'un titre
+trouver_odd_par_mot_cle <- function(titre, mots_cles_odd) {
+  titre <- tolower(titre)
+  for (num in names(mots_cles_odd)) {
+    mots <- mots_cles_odd[[num]]
+    if (any(str_detect(titre, mots))) {
+      return(as.integer(num))
+    }
+  }
+  return(NA_integer_)
+}
+
+library(dplyr)
+library(stringr)
+
+# 1. Appliquer la fonction de prédiction aux titres
+titres_df <- titres_df %>%
+  mutate(
+    objectif = sapply(titre, trouver_odd_par_mot_cle, mots_cles_odd = mots_cles_odd)
+  )
+
+# 2. Remplacer les NA par "Non identifié" (attention à bien convertir en character)
+titres_df <- titres_df %>%
+  mutate(
+    objectif = ifelse(is.na(objectif), "Non identifié", as.character(objectif))
+  )
+
+### Affichage de la base
+print(titres_df)
+
+## Sauvegarder ma base
+write.csv(titres_df, "titres_publications_ODD.csv", row.names = FALSE, fileEncoding = "UTF-8")
+
+
+```
+
+
+
+```{r}
+# 📦 Packages nécessaires
+library(readr); library(dplyr); library(tidytext); library(tidyr); library(stringr); library(ggplot2)
+data("stop_words")
+
+# 1. Charger les titres scrapés
+pub <- read_csv("publications_ODD.csv")
+
+# 2. Construire la base de référence ODD ← descriptions
+odd_desc <- tribble(
+  ~objectif, ~desc,
+  "ODD 1", "end poverty in all its forms everywhere",
+  "ODD 2", "zero hunger, food security and sustainable agriculture",
+  "ODD 3", "ensure healthy lives and promote well‑being",
+  "ODD 4", "ensure inclusive and equitable quality education",
+  "ODD 5", "achieve gender equality and empower women and girls",
+  "ODD 6", "ensure availability and sustainable management of water and sanitation",
+  "ODD 7", "ensure access to affordable, reliable and sustainable energy",
+  "ODD 8", "promote sustained, inclusive and sustainable economic growth and decent work",
+  "ODD 9", "build resilient infrastructure ... industrialization innovation",
+  "ODD 10", "reduce inequality within and among countries",
+  "ODD 11", "make cities inclusive, safe, resilient and sustainable",
+  "ODD 12", "ensure sustainable consumption and production patterns",
+  "ODD 13", "take urgent action to combat climate change",
+  "ODD 14", "conserve oceans, seas and marine resources",
+  "ODD 15", "protect, restore and promote sustainable use of terrestrial ecosystems",
+  "ODD 16", "promote peaceful and inclusive societies, access to justice and strong institutions",
+  "ODD 17", "strengthen global partnerships for sustainable development"
+)
+
+# 3. Préparer un corpus combiné : publications + ODD
+pub2 <- pub %>% mutate(source = paste0("pub", identifiant), text = titre)
+odd2 <- odd_desc %>% mutate(source = objectif, text = desc)
+corpus <- bind_rows(pub2, odd2)
+
+# 4. Tokenisation et TF‑IDF
+tokens <- corpus %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words, by = "word") %>%
+  count(source, word, sort = TRUE) %>%
+  bind_tf_idf(word, source, n)
+
+# 5. Matrice TF‑IDF large
+mat <- tokens %>%
+  select(source, word, tf_idf) %>%
+  pivot_wider(names_from = word, values_from = tf_idf, values_fill = 0)
+
+# 6. Séparer les pubs et ODD
+mat_pub <- mat %>% filter(str_detect(source, "^pub"))
+mat_odd <- mat %>% filter(str_detect(source, "^ODD"))
+
+# 7. Calcul de la similarité cosinus (matrice)
+sim <- as.matrix(mat_pub[,-1]) %*% t(as.matrix(mat_odd[,-1]))
+rownames(sim) <- mat_pub$source
+colnames(sim) <- mat_odd$source
+
+# 8. Choisir le meilleur ODD par titre
+best <- apply(sim, 1, function(x) names(which.max(x)))
+pub2$objectif <- best
+
+# 9. Convertir la base enrichie
+pub_final <- pub2 %>%
+  mutate(identifiant = as.integer(str_remove(source, "pub"))) %>%
+  select(identifiant, titre, objectif)
+
+# 10. Sauvegarder & visualiser
+write_csv(pub_final, "publications_ODD_objectifs_TFIDF.csv")
+
+pub_final %>%
+  count(objectif, sort = TRUE) %>%
+  ggplot(aes(x = reorder(objectif, -n), y = n)) +
+    geom_col(fill="steelblue") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45,hjust=1)) +
+    labs(title="Publications par ODD (TF‑IDF)")
+
+```
+
+
+
+
+
+```{r}
+### Répartition des publications par ODD (objectif prédit)
+
+library(ggplot2)
+
+titres_df %>%
+  count(objectif) %>%
+  ggplot(aes(x = reorder(objectif, -n), y = n, fill = objectif)) +
+  geom_col(show.legend = FALSE) +
+  labs(title = "Nombre de publications par ODD (prédit)",
+       x = "Objectif de développement durable",
+       y = "Nombre de publications") +
+  theme_minimal()
+
+# 3. Préparer un corpus combiné : publications + ODD
+pub2 <- pub %>% mutate(source = paste0("pub", identifiant), text = titre)
+odd2 <- odd_desc %>% mutate(source = objectif, text = desc)
+corpus <- bind_rows(pub2, odd2)
+
+# 4. Tokenisation et TF‑IDF
+tokens <- corpus %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words, by = "word") %>%
+  count(source, word, sort = TRUE) %>%
+  bind_tf_idf(word, source, n)
+
+# 5. Matrice TF‑IDF large
+mat <- tokens %>%
+  select(source, word, tf_idf) %>%
+  pivot_wider(names_from = word, values_from = tf_idf, values_fill = 0)
+
+# 6. Séparer les pubs et ODD
+mat_pub <- mat %>% filter(str_detect(source, "^pub"))
+mat_odd <- mat %>% filter(str_detect(source, "^ODD"))
+
+# 7. Calcul de la similarité cosinus (matrice)
+sim <- as.matrix(mat_pub[,-1]) %*% t(as.matrix(mat_odd[,-1]))
+rownames(sim) <- mat_pub$source
+colnames(sim) <- mat_odd$source
+
+# 8. Choisir le meilleur ODD par titre
+best <- apply(sim, 1, function(x) names(which.max(x)))
+pub2$objectif <- best
+
+# 9. Convertir la base enrichie
+pub_final <- pub2 %>%
+  mutate(identifiant = as.integer(str_remove(source, "pub"))) %>%
+  select(identifiant, titre, objectif)
+
+# 10. Sauvegarder & visualiser
+write_csv(pub_final, "publications_ODD_objectifs_TFIDF.csv")
+
+pub_final %>%
+  count(objectif, sort = TRUE) %>%
+  ggplot(aes(x = reorder(objectif, -n), y = n)) +
+    geom_col(fill="steelblue") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=45,hjust=1)) +
+    labs(title="Publications par ODD (TF‑IDF)")
+
+```
+
+
+
+```{r}
+### Répartition en pourcentage (camembert / donut)
+
+library(ggplot2)
+
+titres_df %>%
+  count(objectif) %>%
+  mutate(pourcent = n / sum(n),
+         label = paste0(objectif, " (", scales::percent(pourcent), ")")) %>%
+  ggplot(aes(x = "", y = pourcent, fill = label)) +
+  geom_col(width = 1) +
+  coord_polar("y") +
+  labs(title = "Proportion des publications par ODD (prédit)") +
+  theme_void()
+
+```
+
+
+
+```{r}
+### Nombre de publications “Non identifié”
+
+table(titres_df$objectif == "Non identifié")
+
+# ou graphique :
+titres_df %>%
+  mutate(identification = ifelse(objectif == "Non identifié", "Non identifié", "Identifié")) %>%
+  count(identification) %>%
+  ggplot(aes(x = identification, y = n, fill = identification)) +
+  geom_col() +
+  labs(title = "Publications identifiées vs non identifiées",
+       x = "", y = "Nombre") +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+#### nuage de mots différent pour chaque ODD, où les mots fréquents dans les titres de publications associées à cet objectif ressortent visuellement.
+
+install.packages(c("tm", "wordcloud", "RColorBrewer", "dplyr"))
+library(tm)
+library(wordcloud)
+library(RColorBrewer)
+library(dplyr)
+
+# Filtrer les objectifs identifiés uniquement
+titres_identifies <- titres_df %>%
+  filter(objectif != "Non identifié") %>%
+  mutate(objectif = as.character(objectif))
+
+# Boucle sur chaque ODD pour créer un nuage de mots
+unique_obj <- unique(titres_identifies$objectif)
+
+for (odd in unique_obj) {
+  # Sous-ensemble pour un seul ODD
+  titres_odd <- titres_identifies %>%
+    filter(objectif == odd) %>%
+    pull(titre)
+  
+  # Création du corpus
+  corpus <- Corpus(VectorSource(titres_odd))
+  corpus <- tm_map(corpus, content_transformer(tolower))
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, removeNumbers)
+  corpus <- tm_map(corpus, removeWords, stopwords("fr"))
+  corpus <- tm_map(corpus, stripWhitespace)
+
+  # Génération du nuage de mots
+  print(paste("Nuage de mots pour ODD", odd))
+  wordcloud(corpus,
+            max.words = 50,
+            scale = c(3, 0.5),
+            colors = brewer.pal(8, "Dark2"),
+            random.order = FALSE)
+}
+
+```
+
+
+
+
+
+# Exercice 2 : Individuel
+
+ce site https://books.toscrape.com/index.html est une librairie fictive qui propose des milliers de livres à scraper.
+
+1. Scraper-le et présenter le résultat dans une base de données qui indique en plus le type de livre (Travel, Mystery). 
+
+
+
+
+```{r}
+# Chargement des packages nécessaires
+library(rvest)     # pour scraper le HTML facilement
+library(dplyr)     # pour manipuler les données
+library(stringr)   # pour manipuler du texte
+
+# Définition de l'URL de base du site
+base_url <- "https://books.toscrape.com/"
+
+# Étape 1 : Extraction des catégories
+page <- read_html(base_url)
+
+categories <- page %>%
+  html_nodes(".side_categories ul li ul li a") %>%
+  { tibble(
+      category = str_trim(html_text(.)),                     # Nom de la catégorie
+      url = html_attr(., "href")                             # Lien relatif de la catégorie
+    )}
+
+# Corriger les URLs relatives en URLs absolues
+categories$url <- url_absolute(categories$url, base_url)
+
+# Étape 2 : Fonction pour scraper une catégorie entière (toutes les pages)
+# ✅ MODIFICATION pour inclure le lien vers chaque livre
+scrape_category <- function(cat_name, cat_url) {
+  cat_books <- list()
+  page_url <- cat_url
+  
+  repeat {
+    # Lecture sécurisée de la page HTML
+    cat_page <- tryCatch(read_html(page_url), error = function(e) return(NULL))
+    if (is.null(cat_page)) break
+    # Sélection des livres sur la page
+    books <- cat_page %>% html_nodes(".product_pod")
+    # Extraction des informations utiles pour chaque livre
+    data <- tibble(
+      title = books %>% html_node("h3 a") %>% html_attr("title"),
+      price = books %>% html_node(".price_color") %>% html_text() %>% str_remove("£") %>% as.numeric(),
+      availability = books %>% html_node(".availability") %>% html_text() %>% str_trim(),
+      link = books %>% html_node("h3 a") %>% html_attr("href") %>% url_absolute(page_url)
+    )
+    
+    # Ajout de la catégorie à chaque livre
+    data$category <- cat_name
+    cat_books[[length(cat_books) + 1]] <- data
+    
+    next_link <- cat_page %>% html_node(".next a") %>% html_attr("href")
+    if (is.na(next_link)) break
+    
+    page_url <- url_absolute(next_link, page_url)
+  }
+  
+  bind_rows(cat_books)
+}
+
+# Étape 3 : Scraper toutes les catégories
+all_books <- list()
+
+for (i in 1:nrow(categories)) {
+  cat("✅ Scraping catégorie :", categories$category[i], "\n")
+  
+  books <- tryCatch(
+    scrape_category(categories$category[i], categories$url[i]),
+    error = function(e) {
+      cat("⚠️ Erreur dans la catégorie :", categories$category[i], "\n")
+      return(NULL)
+    }
+  )
+  
+  if (!is.null(books)) {
+    all_books[[length(all_books) + 1]] <- books
+  }
+}
+
+# Étape 4 : Fusionner tous les livres scrapés
+all_books_df <- bind_rows(all_books)
+
+# Affichage final
+cat("\n📚 Nombre total de livres scrapés :", nrow(all_books_df), "\n")
+
+# Sauvegarde dans un fichier CSV
+write.csv(all_books_df, "books_ALL_categories_complete.csv", row.names = FALSE)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+2. Pour chaque livre, collecter les informations sur la description du livre et ajouter-les dans la base de données
+
+
+
+
+
+```{r}
+
+
+### fonction pour extraire la description depuis la page du livre
+# 🔍 Fonction pour récupérer la description via <meta name="description">
+get_description <- function(book_url) {
+  page <- tryCatch(read_html(book_url), error = function(e) return(NA_character_))
+  
+  desc <- page %>%
+    html_node("meta[name='description']") %>%
+    html_attr("content") %>%
+    str_squish()
+  
+  return(desc)
+}
+
+### enrichir all_books_df avec la colonne description
+# 🧠 Appliquer la fonction à chaque livre (avec progression)
+#### Ajouter les descriptions 
+
+get_description <- function(book_url) {
+  if (is.na(book_url) || book_url == "") return(NA_character_)
+  
+  page <- tryCatch(read_html(book_url), error = function(e) return(NA))
+  if (!inherits(page, "xml_document")) return(NA_character_)
+  
+  desc <- page %>%
+    html_node("meta[name='description']") %>%
+    html_attr("content")
+  
+  if (is.null(desc)) return(NA_character_)
+  
+  return(str_squish(desc))
+}
+
+### Appliquer à la base complète
+all_books_df <- all_books_df %>%
+  rowwise() %>%
+  mutate(description = get_description(link)) %>%
+  ungroup()
+
+# Exporter le tableau en Excel
+write.xlsx(all_books_df, "data/all_books_df.xlsx")
+
+### Sauvegarde finale
+write.csv(all_books_df, "books_with_description_final.csv", row.names = FALSE)
+
+```
+
+
+
+
+
+
+3. Présenter les 20 mots les plus cités dans chaque collection. Est-ce que ces mots reflètent 
+
+
+
+```{r}
+library(dplyr)
+library(tidytext)
+library(ggplot2)
+library(stringr)
+
+# ✅ 1. Filtrer les collections demandées uniquement
+books_filtered <- all_books_df %>%
+  filter(category %in% c("Travel", "Mystery") & !is.na(description)) %>%
+  select(category, description)
+
+# ✅ 2. Tokenisation : découper les descriptions en mots
+tokens <- books_filtered %>%
+  unnest_tokens(word, description)
+
+# ✅ 3. Supprimer les stopwords anglais (mots très fréquents et inutiles)
+data("stop_words")
+tokens_clean <- tokens %>%
+  anti_join(stop_words, by = "word") %>%
+  filter(str_detect(word, "^[a-z']+$"))
+
+# ✅ 4. Top 20 mots par collection (Travel, Mystery)
+top_words <- tokens_clean %>%
+  count(category, word, sort = TRUE) %>%
+  group_by(category) %>%
+  slice_max(n, n = 20) %>%
+  ungroup()
+
+# ✅ 5. Reorder pour faceting propre
+top_words <- top_words %>%
+  mutate(word = tidytext::reorder_within(word, n, category))
+
+# ✅ 6. Graphique à barres horizontal par collection
+ggplot(top_words, aes(x = word, y = n, fill = category)) +
+  geom_col(show.legend = FALSE) +
+  tidytext::scale_x_reordered() +
+  coord_flip() +
+  facet_wrap(~category, scales = "free_y") +
+  labs(
+    title = "Top 20 mots les plus fréquents dans chaque collection",
+    x = "Mot",
+    y = "Fréquence"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    strip.text = element_text(face = "bold")
+  )
+
+```
+
+
+
+```{r}
+### Barres colorées avec effet "minimal élégant"
+
+ggplot(top_words, aes(x = word, y = n, fill = category)) +
+  geom_col(width = 0.7, color = "black", alpha = 0.9, show.legend = FALSE) +
+  tidytext::scale_x_reordered() +
+  coord_flip() +
+  facet_wrap(~category, scales = "free_y") +
+  scale_fill_manual(values = c("Mystery" = "#E63946", "Travel" = "#1D3557")) +
+  labs(
+    title = "📚 20 mots les plus fréquents par collection",
+    subtitle = "Comparaison entre les collections 'Mystery' et 'Travel'",
+    x = "Mot le plus utilisé (nettoyé)",
+    y = "Fréquence"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5, color = "#333333"),
+    plot.subtitle = element_text(size = 13, hjust = 0.5),
+    strip.text = element_text(face = "bold", size = 14),
+    axis.text.y = element_text(face = "bold", color = "#333333")
+  )
+
+```
+
+
+
+
+```{r}
+### Couleurs personnalisées + texte sur les barres
+
+ggplot(top_words, aes(x = n, y = tidytext::reorder_within(word, n, category), color = category)) +
+  geom_segment(aes(x = 0, xend = n, yend = tidytext::reorder_within(word, n, category)), size = 1.1) +
+  geom_point(size = 3.5) +
+  facet_wrap(~category, scales = "free") +
+  tidytext::scale_y_reordered() +
+  scale_color_manual(values = c("Mystery" = "#E63946", "Travel" = "#1D3557")) +
+  labs(
+    title = "Top 20 mots les plus fréquents par collection",
+    x = "Fréquence", y = "Mot"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    strip.text = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold")
+  )
+
+```
+
+
+
+```{r}
+### Nuages de mots (Wordcloud)
+
+library(wordcloud)
+library(RColorBrewer)
+
+# Fonction pour nuage par collection
+plot_wordcloud <- function(cat) {
+  words <- tokens_clean %>%
+    filter(category == cat) %>%
+    count(word, sort = TRUE) %>%
+    anti_join(stop_words, by = "word") %>%
+    top_n(20, n)
+  
+  wordcloud(words = words$word, freq = words$n,
+            min.freq = 1, max.words = 100,
+            scale = c(3, 0.8),
+            colors = brewer.pal(8, "Dark2"),
+            random.order = FALSE)
+}
+
+# Travel
+plot_wordcloud("Travel")
+title("Nuage de mots - Travel")
+
+# Mystery
+plot_wordcloud("Mystery")
+title("Nuage de mots - Mystery")
+
+```
+
+
+
+```{r}
+### Treemap (carte arborescente proportionnelle)
+
+library(treemapify)
+
+ggplot(top_words, aes(area = n, fill = category, label = word)) +
+  geom_treemap(alpha = 0.9) +
+  geom_treemap_text(color = "white", place = "centre", grow = TRUE, reflow = TRUE) +
+  facet_wrap(~category) +
+  scale_fill_manual(values = c("Mystery" = "#6a51a3", "Travel" = "#2b8cbe")) +
+  labs(title = "Top 20 mots les plus fréquents (Treemap)") +
+  theme_minimal(base_size = 13) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+```
+
+
+
+### Interprétation du graphique obtenu de la question 3
+
+Le graphique met en évidence une forte cohérence lexicale entre les mots les plus fréquents et la thématique de chaque collection. Dans Mystery, les termes dominants comme detective, murder, crime, police, thriller et dark renvoient clairement aux codes du genre policier et du suspense. La présence de mots comme girl, woman, husband et friend souligne aussi l’importance des personnages dans les intrigues. À l’inverse, la collection Travel est caractérisée par des mots associés à l’exploration géographique et culturelle tels que travel, world, trip, continent, country, writer, dream ou discover. Ces mots traduisent l’idée de découverte, d’aventure personnelle et de mouvement. Ainsi, les 20 mots les plus cités dans chaque collection reflètent parfaitement l’univers, le contenu et les intentions narratives propres à chaque genre littéraire.
+
+
+
+

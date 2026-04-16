@@ -1,0 +1,1729 @@
+---
+title: "Narratives africaines dans la recherche universitaire : Une analyse textuelle des corpus Constellate"
+author: "Vissého Adjiwanou"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+### 📘 **Titre du projet : "Narratives africaines dans la recherche universitaire : Une analyse textuelle des corpus Constellate"**
+
+---
+
+### 🎯 **Objectif pédagogique**
+
+Amener les étudiant·e·s à :
+
+1. Interroger une large base de textes via **Constellate** (de JSTOR & Portico),
+2. Utiliser R pour faire du **text mining à grande échelle** (cleaning, tokenization, topic modeling, etc.),
+3. Explorer la **présence, la voix et les thématiques africaines** dans la production scientifique (coloniale, postcoloniale et contemporaine),
+4. Visualiser les **dynamiques temporelles et géographiques**.
+
+---
+
+### 🧠 **Problématique centrale**
+
+> *"Quels sont les récits dominants sur l’Afrique dans la littérature académique depuis les années 1900 ? Comment les voix africaines y sont-elles représentées et ont-elles évolué dans le temps, selon les disciplines, les auteurs et les lieux de publication ?"*
+
+---
+
+### 🛠️ **Étapes techniques proposées (en R)**
+
+| Étape                        | Description                                                                                                                 | Packages R                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1. Collecte de données       | Téléchargement d’un corpus depuis Constellate (mots-clés : *Africa*, *colonialism*, *urbanization*, *gender*, *technology*) | `constellate`, `httr`                    |
+| 2. Nettoyage & prétraitement | Tokenisation, suppression des stopwords, lemmatisation                                                                      | `tidytext`, `textclean`, `stringr`       |
+| 3. Analyse exploratoire      | Fréquence de mots, nuages de mots, cooccurrences                                                                            | `dplyr`, `ggplot2`, `wordcloud`, `widyr` |
+| 4. Analyse de sentiments     | À partir de lexiques (ex: NRC, Afinn)                                                                                       | `syuzhet`, `textdata`                    |
+| 5. Topic Modeling            | LDA ou STM pour découvrir les thèmes                                                                                        | `topicmodels`, `stm`, `textmineR`        |
+| 6. Analyse de réseaux        | Réseaux de co-auteurs, pays de publication                                                                                  | `igraph`, `ggraph`                       |
+| 7. Visualisation interactive | Dashboards ou graphiques dynamiques                                                                                         | `shiny`, `plotly`, `leaflet`             |
+
+---
+
+### 🌍 **Adaptation au contexte africain**
+
+Les étudiant·e·s peuvent :
+
+* Filtrer les corpus pour inclure uniquement les **auteurs africains** (via affiliation, si disponible),
+* Comparer la **représentation de certains pays africains** dans les publications anglophones et francophones,
+* Étudier des corpus autour de **la santé, l’éducation, les villes, les conflits, les femmes**.
+
+---
+
+### 💡 **Questions exploratoires proposées**
+
+1. Quelle est l’évolution des thématiques de recherche liées à l’Afrique depuis 1900 ?
+2. Quels pays d’Afrique sont les plus mentionnés dans les corpus académiques ?
+3. Les auteurs africains sont-ils sous-représentés ? Dans quelles disciplines ?
+4. Comment les sentiments associés aux mots *Africa*, *migration*, *development*, *democracy* ont-ils évolué ?
+5. Peut-on distinguer des discours "exogènes" vs "endogènes" sur l’Afrique à travers les topics ?
+
+---
+
+### 📦 **Livrables attendus**
+
+* Rapport d’analyse (RMarkdown ou Quarto),
+* Tableau interactif de visualisation des thématiques par pays et période,
+* Analyse de réseau des collaborations autour des publications sur l’Afrique,
+* ShinyApp (optionnel) pour explorer dynamiquement les résultats.
+
+---
+
+### 🧭 **Exemple de corpus possible dans Constellate**
+
+Mots-clés pour extraction :
+
+* `"Africa"` AND (`"gender"` OR `"urban"` OR `"conflict"` OR `"colonial"`)
+* Journal sources : *African Studies Review*, *Journal of Modern African Studies*, *Canadian Journal of African Studies*, etc.
+
+
+
+
+
+AUTEUR: Lompo Dangouma, Ouoba Djandjoa et Sory Issoufou
+
+
+
+
+
+
+#### Question1
+
+1.Quelle est l’évolution des thématiques de recherche liées à l’Afrique depuis 1900 ?
+
+
+
+```{r}
+# 📦 Chargement des packages
+library(jsonlite)
+library(purrr)
+library(dplyr)
+library(tibble)
+library(stringr)
+
+#  Fonction de secours : retourne NA si valeur manquante
+`%||%` <- function(a, b) if (!is.null(a)) a else b
+
+#  Chemin du fichier .jsonl
+chemin_fichier <- "C:/Users/USER/Desktop/Groupe_de_deux/6f2a93ae-558a-4070-b7b5-b081fd578ac5.jsonl/6f2a93ae-558a-4070-b7b5-b081fd578ac5.jsonl"
+
+
+#  Lire le fichier ligne par ligne
+lignes <- readLines(chemin_fichier, warn = FALSE)
+
+#  Parser chaque ligne JSON et extraire les colonnes utiles
+resultats <- map(lignes, safely(function(ligne) {
+  objet <- fromJSON(ligne)
+  
+  # Concatène toutes les lignes de full_text en un seul bloc
+  texte_concatene <- paste(objet$full_text, collapse = " ")
+  
+  tibble(
+    iid = objet$iid %||% NA,
+    texte = texte_concatene %||% NA
+  )
+}))
+
+#  Garder uniquement les lignes valides sans erreur
+donnees_valides <- resultats %>%
+  keep(~ is.null(.x$error)) %>%
+  map_dfr(~ .x$result)
+
+# Exporter le tableau
+write.csv(donnees_valides, "data/mdonnees_valides.csv", row.names = FALSE)
+
+s#  Vérification
+glimpse(donnees_valides)
+
+```
+
+
+
+```{r}
+#  Chargement des packages nécessaires
+library(stm)         # Structural Topic Model
+library(dplyr)       # Manipulation de données
+library(stringr)     # Nettoyage de texte
+library(textstem)    # Lemmatisation
+library(ggplot2)     # Visualisation
+library(tidytext)    # Pour tidy STM
+
+# 🔧 Nettoyage initial des textes
+textes <- donnees_valides$texte %>%
+  str_to_lower() %>%                                # Minuscules
+  str_replace_all("[^a-z ]", " ") %>%               # Suppression ponctuation
+  str_squish()                                      # Espaces multiples
+
+#  Lemmatisation (garde les formes normales des mots)
+textes_lemmatise <- lemmatize_strings(textes)
+
+# ⚙ Prétraitement STM avec stemming désactivé
+processed <- textProcessor(
+  documents = textes_lemmatise,
+  metadata = donnees_valides,
+  stem = FALSE         # ❌ pas de stemming (car on lemmatise déjà)
+)
+
+# 📄 Création des objets STM (DTM, vocabulaire, méta)
+out <- prepDocuments(processed$documents, processed$vocab, processed$meta)
+
+#  Estimation du modèle STM avec 6 thèmes
+set.seed(2025)
+stm_model <- stm(
+  documents = out$documents,
+  vocab = out$vocab,
+  K = 6,
+  max.em.its = 75,
+  data = out$meta,
+  init.type = "Spectral"
+)
+
+  # 🧾 Résumé : 10 mots les plus représentatifs par thème
+labelTopics(stm_model, n = 10)
+
+
+ 
+
+
+
+#  Visualisation des mots dominants par thème
+topic_terms <- tidy(stm_model, matrix = "beta")  # tidy format
+
+# Tracé avec ggplot2
+topic_terms %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered() +
+  labs(
+    title = "🔍 Mots-clés dominants par thème",
+    x = "Mot-clé lemmatisé",
+    y = "Importance thématique (beta)"
+  ) +
+  theme_minimal(base_size = 13)
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
+#### Question 2
+
+2. Quels pays d’Afrique sont les plus mentionnés dans les corpus académiques ?
+
+```{r}
+#  Chargement des bibliothèques nécessaires
+library(dplyr)
+library(stringr)
+library(tidytext)
+library(ggplot2)
+library(forcats)
+
+#  Liste des pays d'Afrique (à adapter si besoin)
+pays_afrique <- c(
+  "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi", "Cameroon", "Cape Verde",
+  "Central African Republic", "Chad", "Comoros", "Congo", "Democratic Republic of the Congo",
+  "Djibouti", "Egypt", "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Gabon", "Gambia",
+  "Ghana", "Guinea", "Guinea-Bissau", "Ivory Coast", "Kenya", "Lesotho", "Liberia", "Libya",
+  "Madagascar", "Malawi", "Mali", "Mauritania", "Mauritius", "Morocco", "Mozambique", "Namibia",
+  "Niger", "Nigeria", "Rwanda", "São Tomé and Príncipe", "Senegal", "Seychelles", "Sierra Leone",
+  "Somalia", "South Africa", "South Sudan", "Sudan", "Tanzania", "Togo", "Tunisia", "Uganda",
+  "Zambia", "Zimbabwe"
+)
+
+#  Nettoyage : texte en minuscule
+donnees_valides_clean <- donnees_valides %>%
+  mutate(texte_min = tolower(texte))
+
+#  Compter les mentions de chaque pays africain
+mentions_pays <- map_dfr(pays_afrique, function(pays) {
+  motif <- str_to_lower(pays)  # minuscule pour correspondre au texte
+  freq <- str_count(donnees_valides_clean$texte_min, fixed(motif))
+  
+  tibble(pays = pays, mentions = sum(freq, na.rm = TRUE))
+})
+
+#  Filtrer uniquement les pays mentionnés au moins une fois
+mentions_pays <- mentions_pays %>%
+  filter(mentions > 0) %>%
+  arrange(desc(mentions))
+
+#  Visualisation : Top 20 des pays africains les plus mentionnés
+ggplot(mentions_pays %>% slice_max(mentions, n = 20), aes(x = fct_reorder(pays, mentions), y = mentions)) +
+  geom_bar(stat = "identity", fill = "#2c7fb8") +
+  coord_flip() +
+  labs(title = "🌍 Pays africains les plus mentionnés dans les corpus",
+       x = "Pays", y = "Nombre de mentions") +
+  theme_minimal(base_size = 14)
+
+```
+
+
+
+```{r}
+#  Packages supplémentaires utiles
+library(ggtext)    # Pour enrichir le titre avec du HTML (gras, couleurs)
+library(scales)    # Pour formater joliment les axes
+
+#  Palette de couleurs bleues harmonieuses (du package viridis, optionnel)
+library(viridis)
+
+#  Nouveau graphique élégant
+mentions_pays %>% 
+  slice_max(mentions, n = 20) %>% 
+  ggplot(aes(x = fct_reorder(pays, mentions), y = mentions, fill = mentions)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  coord_flip() +
+  scale_fill_viridis_c(option = "plasma", direction = -1) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    title = "<b style='color:#2c7fb8;'>🌍 Top 20 des pays africains</b> les plus mentionnés dans les publications académiques",
+    subtitle = "Analyse textuelle issue du corpus Constellate (1900–2025)",
+    x = "", y = "Nombre de mentions"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_markdown(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    panel.grid.major.y = element_blank()
+  )
+
+```
+
+
+```{r}
+library(ggplot2)
+library(forcats)
+
+mentions_pays %>% 
+  slice_max(mentions, n = 20) %>%
+  ggplot(aes(x = fct_reorder(pays, mentions), y = mentions, fill = pays)) +
+  geom_col(show.legend = FALSE) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_viridis_d(option = "C") +
+  labs(
+    title = "Top 20 des pays africains les plus cités",
+    x = "Pays", y = "Mentions"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+library(treemapify)
+
+mentions_pays %>% 
+  slice_max(mentions, n = 20) %>%
+  ggplot(aes(area = mentions, fill = pays, label = pays)) +
+  geom_treemap() +
+  geom_treemap_text(colour = "white", place = "centre", size = 12, grow = TRUE) +
+  scale_fill_viridis_d(option = "D") +
+  labs(title = "Répartition des mentions par pays (Treemap)") +
+  theme_minimal()
+
+```
+
+
+#### Question 3
+
+3. Les auteurs africains sont-ils sous-représentés ? Dans quelles disciplines ?
+
+```{r}
+#  Chargement des outils
+library(stringr)
+library(dplyr)
+
+#  Liste indicative des pays africains (tu peux l’enrichir)
+pays_afrique <- c("Burkina Faso", "Nigeria", "Ghana", "Senegal", "Kenya", "South Africa", "Cameroon", "Côte d'Ivoire",
+                  "Algeria", "Morocco", "Tunisia", "Mali", "Uganda", "Tanzania", "Ethiopia", "Benin", "Niger")
+
+#  Identifier les documents mentionnant au moins un pays africain dans le texte (affiliation probable)
+donnees_valides <- donnees_valides %>%
+  mutate(auteur_africain = str_detect(texte, str_c(pays_afrique, collapse = "|")))
+
+table(donnees_valides$auteur_africain, useNA = "ifany")
+
+
+
+# Exemple simple de mots-clés disciplinaires
+disciplines_keywords <- list(
+  "sociologie" = c("society", "social", "inequality", "family"),
+  "économie" = c("economy", "growth", "gdp", "development", "market"),
+  "science politique" = c("election", "democracy", "regime", "policy"),
+  "santé publique" = c("health", "hiv", "disease", "clinic", "mortality"),
+  "éducation" = c("education", "school", "literacy", "teacher"),
+  "urbanisme" = c("urban", "city", "infrastructure", "transport"),
+  "genre" = c("gender", "woman", "female", "equality", "violence")
+)
+
+# 🔁 Assigner discipline selon présence des mots-clés
+donnees_valides <- donnees_valides %>%
+  rowwise() %>%
+  mutate(
+    discipline = {
+      found <- NA
+      for (disc in names(disciplines_keywords)) {
+        if (any(str_detect(tolower(texte), disciplines_keywords[[disc]]))) {
+          found <- disc
+          break
+        }
+      }
+      found
+    }
+  ) %>%
+  ungroup()
+
+
+# On filtre uniquement les lignes avec une discipline renseignée
+donnees_discipline <- donnees_valides %>%
+  filter(!is.na(discipline))
+
+###
+# Comptage du nombre d’auteurs africains par discipline
+representation <- donnees_discipline %>%
+  group_by(discipline, auteur_africain) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(discipline) %>%
+  mutate(pct = round(n / sum(n) * 100, 1))
+
+### Visualisation claire (graphique en barres groupées)
+library(ggplot2)
+
+ggplot(representation, aes(x = fct_reorder(discipline, -n), y = pct, fill = auteur_africain)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Représentation des auteurs africains par discipline",
+    x = "Discipline",
+    y = "Pourcentage",
+    fill = "Auteur africain"
+  ) +
+  coord_flip() +
+  theme_minimal(base_size = 13)
+
+
+
+```
+
+
+
+
+```{r}
+
+# 📊 Proportions d'auteurs africains par discipline
+
+representation <- donnees_valides %>%
+  filter(!is.na(discipline)) %>%
+  group_by(discipline) %>%
+  summarise(
+    total_docs = n(),
+    docs_africains = sum(auteur_africain, na.rm = TRUE),
+    part_afrique = docs_africains / total_docs
+  ) %>%
+  arrange(desc(part_afrique))
+
+
+
+library(ggplot2)
+
+ggplot(representation, aes(x = reorder(discipline, part_afrique), y = part_afrique)) +
+  geom_col(fill = "#138D75") +
+  geom_text(aes(label = scales::percent(part_afrique, accuracy = 1)), hjust = -0.1, size = 4) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0,1)) +
+  coord_flip() +
+  labs(
+    title = "Taux de représentation des auteurs africains par discipline",
+    x = "Discipline", y = "Part des documents avec au moins un auteur africain"
+  ) +
+  theme_minimal()
+
+```
+
+
+
+
+
+
+
+
+#### QUestion4
+
+4. Comment les sentiments associés aux mots *Africa*, *migration*, *development*, *democracy* ont-ils évolué ?
+
+
+
+```{r}
+# 📚 Chargement des bibliothèques
+
+library(dplyr)
+library(tidytext)
+library(ggplot2)
+
+# Étape 1 : Recréer la colonne annee à partir de out$meta$texte
+
+library(stringr)
+
+donnees_valides <- donnees_valides %>%
+  mutate(annee = str_extract(texte, "\\b(19[0-9]{2}|20[0-2][0-9]|2025)\\b"),
+         annee = as.numeric(annee)) %>%
+  filter(!is.na(annee))  # supprime les NA
+
+
+
+
+# 🗝️ Définir les mots d’intérêt
+mots_interet <- c("africa", "migration", "development", "democracy")
+
+# 🔄 Étapes : Tokenisation + sélection des mots d'intérêt + comptage par année
+frequence_mots <- donnees_valides %>%
+  filter(!is.na(annee)) %>%                        # Garder les années valides
+  unnest_tokens(word, texte) %>%                  # Découpe du texte en mots
+  mutate(word = tolower(word)) %>%                # Conversion en minuscules
+  filter(word %in% mots_interet) %>%              # Garder uniquement les mots-clés
+  count(annee, word, sort = TRUE) %>%             # Comptage annuel par mot
+  group_by(word) %>%                              # Pour chaque mot
+  mutate(freq_relative = n / sum(n)) %>%          # Calcule fréquence relative
+
+  ungroup()
+
+# 📊 Visualisation : évolution annuelle par mot-clé
+ggplot(frequence_mots, aes(x = annee, y = freq_relative, color = word)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_color_brewer(palette = "Set1") +
+  labs(
+    title = "📈 Évolution temporelle des mots-clés (Africa, migration, etc.)",
+    subtitle = "Fréquence relative par année dans les publications",
+    x = "Année", y = "Fréquence relative", color = "Mot-clé"
+  ) +
+  theme_minimal(base_size = 14)
+
+```
+
+
+
+```{r}
+#  Chargement des packages nécessaires
+library(dplyr)
+library(tidytext)
+library(ggplot2)
+
+# 🗝️ Mots-clés d’intérêt
+mots_interet <- c("africa", "migration", "development", "democracy")
+
+#  Tokenisation + filtrage + ajout de la décennie
+frequence_decennie <- donnees_valides %>%
+  filter(!is.na(annee)) %>%                           # Garder les années valides
+  mutate(decennie = floor(annee / 10) * 10) %>%       # Regrouper par décennies
+  unnest_tokens(word, texte) %>%                      # Tokenisation
+  mutate(word = tolower(word)) %>%                    # Mettre en minuscules
+  filter(word %in% mots_interet) %>%                  # Garder les mots d’intérêt
+  count(decennie, word)                               # Compter par mot et décennie
+
+#  Graphique en barres élégant
+ggplot(frequence_decennie, aes(x = factor(decennie), y = n, fill = word)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = "📊 Évolution des mots-clés par décennie",
+    subtitle = "Africa, migration, development, democracy",
+    x = "Décennie", y = "Nombre d’occurrences", fill = "Mot-clé"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(size = 13),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+#### EN UTILISANT AFINN
+
+# 📦 Étape 0 — Chargement des bibliothèques nécessaires
+library(dplyr)        # Manipulation de données
+library(ggplot2)      # Visualisation
+library(tidytext)     # Text mining et tokenisation
+library(textdata)     # Accès aux lexiques de sentiments
+library(stringr)      # Manipulation de chaînes
+
+#  Étape 1 — Charger le lexique AFINN (valeurs de -5 à +5)
+afinn <- get_sentiments("afinn") %>%
+  mutate(word = tolower(word))  # Mettre en minuscule pour assurer les jointures
+
+#  Étape 2 — Définir les mots-clés d’intérêt
+mots_interet <- c("africa", "migration", "development", "democracy")
+
+#  Étape 3 — Tokeniser le texte, nettoyer et joindre avec AFINN
+data_tokens <- donnees_valides %>%
+  filter(!is.na(annee)) %>%                        # Filtrer les documents avec une année connue
+  unnest_tokens(word, texte) %>%                   # Découpe le texte en mots
+  mutate(word = tolower(word)) %>%                 # Uniformiser en minuscule
+  inner_join(afinn, by = "word")                   # Garder uniquement les mots scorés dans AFINN
+
+#  Étape 4 — Associer les documents aux mots-clés d’intérêt
+doc_motcle <- donnees_valides %>%
+  filter(!is.na(annee)) %>%
+  select(iid, texte, annee) %>%
+  unnest_tokens(word, texte) %>%
+  mutate(word = tolower(word)) %>%
+  filter(word %in% mots_interet) %>%               # Conserver uniquement les mots-clés définis
+  distinct(iid, word) %>%                          # Un document peut avoir plusieurs mots-clés
+  rename(mot_cle = word)
+
+#  Étape 5 — Associer les scores de sentiment aux mots-clés trouvés dans chaque document
+data_sentiment <- data_tokens %>%
+  inner_join(doc_motcle, by = "iid")               # Jointure sur l’identifiant de document
+
+#  Étape 6 — Créer une variable « décennie » à partir de l’année
+data_sentiment <- data_sentiment %>%
+  mutate(decennie = floor(annee / 10) * 10)
+
+#  Étape 7 — Calculer le score moyen de sentiment par mot-clé et décennie
+sentiment_moyen <- data_sentiment %>%
+  group_by(mot_cle, decennie) %>%
+  summarise(score_moyen = mean(value, na.rm = TRUE), .groups = "drop")
+
+#  Étape 8 — Visualisation élégante de l’évolution des sentiments
+ggplot(sentiment_moyen, aes(x = factor(decennie), y = score_moyen, color = mot_cle, group = mot_cle)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2.5) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(
+    title = "📈 Évolution des sentiments associés aux mots-clés (AFINN)",
+    subtitle = "Analyse de sentiment moyenne par décennie",
+    x = "Décennie", y = "Score de sentiment moyen",
+    color = "Mot-clé"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(size = 13),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+
+
+
+```{r}
+### Évolution comparée : lignes avec intervalle de confiance
+
+library(ggplot2)
+
+# Ajouter un intervalle de confiance (standard error)
+sentiment_stats <- data_sentiment %>%
+  group_by(mot_cle, decennie) %>%
+  summarise(
+    moyenne = mean(value, na.rm = TRUE),
+    ecart_type = sd(value, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  ) %>%
+  mutate(se = ecart_type / sqrt(n))  # standard error
+
+# Graphique avec bande IC
+ggplot(sentiment_stats, aes(x = factor(decennie), y = moyenne, color = mot_cle, group = mot_cle)) +
+  geom_line(size = 1.1) +
+  geom_point(size = 2) +
+  geom_ribbon(aes(ymin = moyenne - se, ymax = moyenne + se, fill = mot_cle), alpha = 0.2, color = NA) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_fill_brewer(palette = "Dark2") +
+  labs(
+    title = "📈 Évolution des sentiments avec intervalle de confiance",
+    subtitle = "Par mot-clé et décennie — Lexique AFINN",
+    x = "Décennie", y = "Score moyen", color = "Mot-clé", fill = "Mot-clé"
+  ) +
+  theme_minimal(base_size = 13)
+
+```
+
+
+
+```{r}
+### Répartition des sentiments : graphique en violon ou en boîte
+
+ggplot(data_sentiment, aes(x = factor(decennie), y = value, fill = mot_cle)) +
+  geom_violin(alpha = 0.5, scale = "width", trim = FALSE) +
+  facet_wrap(~ mot_cle, scales = "free_y") +
+  labs(
+    title = "🎻 Répartition des scores de sentiment par mot-clé",
+    subtitle = "Distribution des sentiments (AFINN) selon la décennie",
+    x = "Décennie", y = "Score de sentiment (AFINN)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+```{r}
+### Nombre d’occurrences vs. sentiment : 2 axes
+
+library(scales)
+
+freq_sentiment <- data_sentiment %>%
+  group_by(mot_cle, decennie) %>%
+  summarise(
+    freq = n(),
+    score_moyen = mean(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(freq_sentiment, aes(x = freq, y = score_moyen, color = mot_cle)) +
+  geom_point(size = 3, alpha = 0.8) +
+  geom_text(aes(label = decennie), hjust = -0.2, size = 3) +
+  scale_x_log10(labels = comma) +
+  labs(
+    title = "🔁 Fréquence vs. sentiment",
+    subtitle = "Chaque point = un mot-clé dans une décennie",
+    x = "Fréquence (log10)", y = "Score moyen de sentiment"
+  ) +
+  theme_minimal(base_size = 13)
+
+```
+
+
+```{r}
+### Heatmap (carte thermique) des sentiments par mot-clé et décennie
+
+library(ggplot2)
+
+ggplot(sentiment_moyen, aes(x = factor(decennie), y = mot_cle, fill = score_moyen)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0) +
+  labs(
+    title = "🔥 Carte thermique des sentiments",
+    x = "Décennie", y = "Mot-clé", fill = "Score moyen"
+  ) +
+  theme_minimal(base_size = 13)
+
+```
+
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+library(scales)
+
+# 📊 Barplot élégant : Score de sentiment moyen par mot-clé et décennie
+
+ggplot(sentiment_moyen, aes(x = factor(decennie), y = score_moyen, fill = mot_cle)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7, alpha = 0.9) +
+  scale_fill_brewer(palette = "Set2") +
+  geom_text(aes(label = round(score_moyen, 2)), 
+            position = position_dodge(width = 0.8), 
+            vjust = -0.5, size = 3.5, color = "black") +
+  labs(
+    title = "📊 Score moyen de sentiment par mot-clé et décennie",
+    subtitle = "Analyse basée sur le lexique AFINN (positif ↗ / négatif ↘)",
+    x = "Décennie",
+    y = "Score moyen de sentiment",
+    fill = "Mot-clé"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 18, color = "#333333"),
+    plot.subtitle = element_text(size = 13, color = "#666666"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major.y = element_line(color = "grey90"),
+    legend.position = "top"
+  )
+
+```
+
+
+```{r}
+#### Analyse approfondie des sentiments positifs vs négatifs
+
+## Séparer les sentiments positifs et négatifs
+
+sentiment_detail <- data_sentiment %>%
+  mutate(type_sentiment = case_when(
+    value > 0 ~ "Positif",
+    value < 0 ~ "Négatif",
+    TRUE ~ NA_character_
+  ))
+
+
+### Calculer le nombre de mots positifs et négatifs par décennie et mot-clé
+
+freq_sentiments <- sentiment_detail %>%
+  filter(!is.na(type_sentiment)) %>%
+  group_by(mot_cle, decennie, type_sentiment) %>%
+  summarise(n = n(), .groups = "drop")
+
+### Graphique en barres empilées
+
+ggplot(freq_sentiments, aes(x = factor(decennie), y = n, fill = type_sentiment)) +
+  geom_col(position = "stack", width = 0.7) +
+  facet_wrap(~mot_cle, ncol = 2) +
+  scale_fill_manual(values = c("Positif" = "#1b9e77", "Négatif" = "#d95f02")) +
+  labs(
+    title = "📊 Distribution des sentiments positifs vs négatifs",
+    subtitle = "Par mot-clé et décennie (lexique AFINN)",
+    x = "Décennie", y = "Nombre de mots",
+    fill = "Type de sentiment"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.text = element_text(face = "bold", size = 13),
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 13),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+```
+
+
+
+```{r}
+
+### Graphique en lignes séparées par type de sentiment
+
+ggplot(freq_sentiments, aes(x = decennie, y = n, color = type_sentiment)) +
+  geom_line(size = 1.3) +
+  geom_point(size = 2) +
+  facet_wrap(~mot_cle, scales = "free_y") +
+  scale_color_manual(values = c("Positif" = "#1b9e77", "Négatif" = "#d95f02")) +
+  labs(
+    title = "📈 Évolution des sentiments positifs vs négatifs par mot-clé",
+    subtitle = "Nombre de mots avec score AFINN par décennie",
+    x = "Décennie", y = "Nombre de mots",
+    color = "Type de sentiment"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.text = element_text(face = "bold", size = 13),
+    plot.title = element_text(size = 18, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+```{r}
+### Graphique 100% empilé (proportionnel)
+
+ggplot(freq_sentiments, aes(x = factor(decennie), y = n, fill = type_sentiment)) +
+  geom_col(position = "fill", width = 0.7) +
+  facet_wrap(~mot_cle) +
+  scale_fill_manual(values = c("Positif" = "#4CAF50", "Négatif" = "#E53935")) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(
+    title = "📊 Proportion de sentiments positifs vs négatifs par décennie",
+    subtitle = "Standardisé par mot-clé (lexique AFINN)",
+    x = "Décennie", y = "Proportion",
+    fill = "Sentiment"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.text = element_text(face = "bold", size = 13),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+```
+
+
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidytext)
+library(forcats)
+library(wordcloud)
+library(reshape2)
+
+# 🧹 Étape 1 : filtrer les sentiments positifs et négatifs
+sentiment_detail <- data_sentiment %>%
+  mutate(type_sentiment = ifelse(value >= 0, "Positif", "Négatif"))
+
+#  Étape 2 : compter les mots les plus fréquents par sentiment
+mots_freq <- sentiment_detail %>%
+  count(type_sentiment, word, sort = TRUE) %>%
+  group_by(type_sentiment) %>%
+  slice_max(n, n = 20) %>%
+  ungroup()
+
+#  Étape 3A : Graphique en barres séparé par sentiment
+ggplot(mots_freq, aes(x = fct_reorder(word, n), y = n, fill = type_sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~type_sentiment, scales = "free", ncol = 1) +
+  coord_flip() +
+  scale_fill_manual(values = c("Positif" = "#2E7D32", "Négatif" = "#C62828")) +
+  labs(
+    title = "🔤 Mots les plus associés aux sentiments positifs et négatifs",
+    x = "Mot", y = "Fréquence"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(strip.text = element_text(face = "bold", size = 13))
+
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(forcats)
+
+#  Sélection des 15 mots les plus fréquents par type de sentiment
+mots_freq <- sentiment_detail %>%
+  count(type_sentiment, word, sort = TRUE) %>%
+  group_by(type_sentiment) %>%
+  slice_max(order_by = n, n = 15) %>%
+  ungroup() %>%
+  mutate(word = fct_reorder2(word, n, type_sentiment))  # pour tri par fréquence dans chaque facette
+
+#  Barres verticales par sentiment
+ggplot(mots_freq, aes(x = word, y = n, fill = type_sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~type_sentiment, scales = "free_x") +
+  scale_fill_manual(values = c("Positif" = "#1B9E77", "Négatif" = "#D95F02")) +
+  labs(
+    title = "🔠 Fréquence des mots associés aux sentiments positifs et négatifs",
+    subtitle = "Lexique AFINN – Corpus JSTOR – Afrique",
+    x = "Mot", y = "Fréquence"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  # ✅ mots lisibles
+    axis.text.y = element_text(size = 12),
+    strip.text = element_text(size = 15, face = "bold"),
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 13)
+  )
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# 
+# install.packages("wordcloud2")
+
+library(dplyr)
+library(wordcloud2)
+
+# 1. Préparer les données de fréquence pour chaque sentiment
+freq_pos <- sentiment_detail %>%
+  filter(type_sentiment == "Positif") %>%
+  count(word, sort = TRUE)
+
+freq_neg <- sentiment_detail %>%
+  filter(type_sentiment == "Négatif") %>%
+  count(word, sort = TRUE)
+
+# 🌿 Nuage de mots pour les sentiments positifs (clair, élégant)
+wordcloud2(freq_pos, 
+           size = 1.2, 
+           color = "darkgreen", 
+           backgroundColor = "white",
+           shape = "circle",
+           fontWeight = "bold")
+
+
+
+#  Nuage de mots pour les sentiments négatifs (clair, élégant)
+wordcloud2(freq_neg, 
+           size = 1.2, 
+           color = "firebrick", 
+           backgroundColor = "white",
+           shape = "circle",
+           fontWeight = "bold")
+
+
+
+
+```
+
+
+
+
+#### Question 5
+
+5. Peut-on distinguer des discours "exogènes" vs "endogènes" sur l’Afrique à travers les topics ?
+
+```{r}
+### Identifier les topics selon l’origine de l’auteur (exogène vs endogène)
+
+library(tidyr)  # 📦 Pour les fonctions pivot_longer et pivot_wider
+
+
+#  Calcul de la proportion de chaque topic dans chaque document
+theta <- as_tibble(stm_model$theta) %>%
+  mutate(iid = out$meta$iid,
+         auteur_africain = out$meta$auteur_africain)
+
+
+#  Ajouter les métadonnées aux proportions STM (theta)
+theta <- theta %>%
+  mutate(iid = out$meta$iid) %>%              # ajoute l'identifiant
+  left_join(donnees_valides %>% select(iid, auteur_africain), by = "iid")  # ajoute l'origine auteur
+
+
+#  Résumer la moyenne de chaque topic selon l’origine
+theta_moyenne <- theta %>%
+  pivot_longer(cols = -c(iid, auteur_africain), names_to = "topic", values_to = "proportion") %>%
+  group_by(topic, auteur_africain) %>%
+  summarise(moyenne = mean(proportion), .groups = "drop")
+
+
+###   Visualiser clairement les différences
+
+library(ggplot2)
+
+ggplot(theta_moyenne, aes(x = topic, y = moyenne, fill = auteur_africain)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("TRUE" = "forestgreen", "FALSE" = "steelblue")) +
+  labs(
+    title = "📊 Différences thématiques entre discours exogènes et endogènes",
+    subtitle = "Proportion moyenne par topic selon l’origine de l’auteur",
+    x = "Topics", y = "Proportion moyenne",
+    fill = "Auteur africain"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+```
+
+```{r}
+
+#### SUPPRIMONS LES NA DANS "auteur_africain
+
+### Identifier les topics selon l’origine de l’auteur (exogène vs endogène)
+
+library(tidyr)  #  Pour les fonctions pivot_longer et pivot_wider
+
+
+#  Calcul de la proportion de chaque topic dans chaque document
+theta <- as_tibble(stm_model$theta) %>%
+  mutate(iid = out$meta$iid,
+         auteur_africain = out$meta$auteur_africain)
+
+#  Ajouter les métadonnées aux proportions STM (theta)
+theta <- theta %>%
+  mutate(iid = out$meta$iid) %>%              # ajoute l'identifiant
+  left_join(donnees_valides %>% select(iid, auteur_africain), by = "iid")  # ajoute l'origine auteur
+
+
+# 🧹 Supprimer les lignes avec NA dans la colonne auteur_africain
+theta <- theta %>%
+  filter(!is.na(auteur_africain))
+
+#  1. Renommer proprement les topics pour clarté
+theta <- theta %>%
+  rename_with(.cols = starts_with("V"), .fn = ~ paste0("Topic_", seq_along(.)))  # V1 → Topic_1, etc.
+
+#  Résumer la moyenne de chaque topic selon l’origine
+theta_moyenne <- theta %>%
+  pivot_longer(cols = -c(iid, auteur_africain), names_to = "topic", values_to = "proportion") %>%
+  group_by(topic, auteur_africain) %>%
+  summarise(moyenne = mean(proportion), .groups = "drop")
+
+
+###   Visualiser clairement les différences
+
+library(ggplot2)
+
+ggplot(theta_moyenne, aes(x = topic, y = moyenne, fill = auteur_africain)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("TRUE" = "forestgreen", "FALSE" = "steelblue")) +
+  labs(
+    title = "📊 Différences thématiques entre discours exogènes et endogènes",
+    subtitle = "Proportion moyenne par topic selon l’origine de l’auteur",
+    x = "Topics", y = "Proportion moyenne",
+    fill = "Auteur africain"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+
+
+
+
+
+
+
+```{r}
+
+### ### GRAPHIQUE DE COMPARAISON
+
+#  1. Calcul des moyennes par topic et par origine d'auteur
+theta_moyenne <- theta %>%
+  pivot_longer(cols = starts_with("Topic_"), names_to = "topic", values_to = "proportion") %>%
+  group_by(topic, auteur_africain) %>%
+  summarise(moyenne = mean(proportion), .groups = "drop")
+
+#  2. Graphique de comparaison propre et clair
+ggplot(theta_moyenne, aes(x = topic, y = moyenne, fill = auteur_africain)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Comparaison des thèmes entre auteurs africains et non africains",
+    x = "Thèmes STM (Topic_1 à Topic_6)", y = "Proportion moyenne",
+    fill = "Origine de l’auteur"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+
+```
+
+
+
+
+
+
+
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+#  1. Transformer theta en format long pour chaque document
+theta_dominant <- theta %>%
+  pivot_longer(cols = starts_with("Topic_"),     # Car tes colonnes s’appellent V1 à V6
+               names_to = "topic", 
+               values_to = "proportion") %>%
+  group_by(iid) %>%
+  slice_max(order_by = proportion, n = 1) %>%  # Sélection du topic le plus fort pour chaque doc
+  ungroup() %>%
+  left_join(donnees_valides %>% select(iid, auteur_africain), by = "iid")  # Associer origine
+
+
+#  Rejoindre explicitement et vérifier que auteur_africain est bien là
+theta_dominant <- theta %>%
+  pivot_longer(cols = starts_with("Topic_"), names_to = "topic", values_to = "proportion") %>%
+  group_by(iid) %>%
+  slice_max(order_by = proportion, n = 1) %>%
+  ungroup()
+
+
+#  Vérifions que la colonne est bien présente
+if (!"auteur_africain" %in% colnames(theta_dominant)) {
+  stop("❌ La variable `auteur_africain` est absente après la jointure.")
+}
+
+#  Compter les fréquences par groupe
+dominants_freq <- theta_dominant %>%
+  count(topic, auteur_africain)
+
+
+
+#  3. Visualisation élégante
+ggplot(dominants_freq, aes(x = topic, y = n, fill = auteur_africain)) +
+  geom_col(position = "dodge", width = 0.7) +
+  labs(
+    title = "Thèmes dominants par origine des auteurs",
+    subtitle = "Comparaison des discours endogènes (africains) vs exogènes (non-africains)",
+    x = "Thème STM dominant (topic)",
+    y = "Nombre de documents",
+    fill = "Auteur africain"
+  ) +
+  scale_fill_brewer(palette = "Dark2") +
+  theme_minimal(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+
+
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# 1. Mise en forme
+theta_long <- theta %>%
+  pivot_longer(cols = starts_with("Topic_"), names_to = "topic", values_to = "proportion")
+
+# 2. Test Wilcoxon par topic
+test_wilcox <- theta_long %>%
+  group_by(topic) %>%
+  summarise(p_value = wilcox.test(proportion ~ auteur_africain)$p.value)
+
+print(test_wilcox)
+
+# 3. Boxplot des proportions par topic et origine
+ggplot(theta_long, aes(x = topic, y = proportion, fill = auteur_africain)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(title = "Distribution des topics selon origine d'auteur",
+       x = "Topic", y = "Proportion dans document", fill = "Auteur africain") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+
+
+```{r}
+#  1. Renommer proprement les topics pour clarté
+theta_long <- theta %>%
+  rename_with(.cols = starts_with("Topic_"), .fn = ~ paste0("Topic_", seq_along(.)))  # V1 → Topic_1, etc.
+
+#  2. Identifier le topic dominant (avec la proportion la plus élevée) par document
+theta_dominant <- theta_long %>%
+  pivot_longer(cols = starts_with("Topic_"), names_to = "topic", values_to = "proportion") %>%
+  group_by(iid) %>%
+  slice_max(order_by = proportion, n = 1, with_ties = FALSE) %>%  # Ne garder que le plus dominant
+  ungroup()
+
+#  3. Ajouter l'information d'origine (exogène/endogène)
+theta_dominant <- theta_dominant %>%
+  left_join(donnees_valides %>% select(iid, auteur_africain), by = "iid")
+
+
+#  5. Visualisation : thèmes dominants selon l’origine des auteurs
+library(ggplot2)
+ggplot(dominants_freq, aes(x = topic, y = n, fill = auteur_africain)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "🧠 Thèmes dominants selon l’origine des auteurs",
+    subtitle = "Comparaison exogène (non africain) vs endogène (africain)",
+    x = "Thème STM dominant",
+    y = "Nombre de documents",
+    fill = "Auteur africain ?"
+  ) +
+  scale_fill_manual(values = c("#d73027", "#1a9850"), labels = c("Non africain", "Africain")) +
+  theme_minimal(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+####  QUESTION 1: AJOUT DE REPONSE
+
+1. Pour renforcer la reponse de la question 1
+
+
+```{r}
+###### Quelle est l’évolution des thématiques de recherche liées à l’Afrique depuis 1900 ?
+
+
+# 2. Ajouter la variable année à theta 
+
+theta <- theta %>%
+  left_join(donnees_valides %>% select(iid, annee), by = "iid") %>%
+  filter(!is.na(annee))
+
+# 3. Passer au format long
+theta_long <- theta %>%
+  pivot_longer(
+    cols = starts_with("Topic_"),
+    names_to = "topic",
+    values_to = "proportion"
+  )
+
+ggplot(theta_long, aes(x = annee, y = proportion, color = topic)) +
+  geom_smooth(se = FALSE, method = "loess", span = 0.4) +
+  labs(
+    title = "📈 Évolution des thématiques de recherche sur l’Afrique",
+    subtitle = "Proportion moyenne par année selon chaque topic",
+    x = "Année", y = "Proportion moyenne",
+    color = "Thème"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+
+```{r}
+####  Évolution par ligne (courbe lissée)
+
+
+theta_aggregee <- theta_long %>%
+  group_by(annee, topic) %>%
+  summarise(moyenne = mean(proportion, na.rm = TRUE), .groups = "drop")
+
+ggplot(theta_aggregee, aes(x = annee, y = moyenne, fill = topic)) +
+  geom_area(alpha = 0.8) +
+  labs(
+    title = "🌍 Évolution cumulative des thématiques de recherche",
+    subtitle = "Stacked area chart des proportions de topics",
+    x = "Année", y = "Proportion cumulée",
+    fill = "Thème"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+#  1. Créer la variable décennie
+theta_long <- theta_long %>%
+  filter(!is.na(annee)) %>%
+  mutate(decennie = floor(annee / 10) * 10)
+
+#  2. Agréger les proportions par thème et décennie
+theta_decennie <- theta_long %>%
+  group_by(decennie, topic) %>%
+  summarise(moyenne = mean(proportion, na.rm = TRUE), .groups = "drop")
+
+#  3. Graphique en barres horizontales (plus lisible)
+ggplot(theta_decennie, aes(x = moyenne, y = factor(decennie), fill = topic)) +
+  geom_col(position = "dodge") +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "📊 Évolution thématique par décennie",
+    subtitle = "Proportion moyenne des thèmes STM sur l’Afrique",
+    x = "Proportion moyenne", y = "Décennie", fill = "Thème"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.text.y = element_text(size = 12),
+    legend.position = "bottom"
+  )
+```
+
+
+
+```{r}
+###  Barres verticales par thème et décennie
+
+
+library(dplyr)
+library(ggplot2)
+
+#  1. Créer la variable décennie
+theta_long <- theta_long %>%
+  filter(!is.na(annee)) %>%
+  mutate(decennie = floor(annee / 10) * 10)
+
+#  2. Agréger les proportions par thème et décennie
+theta_decennie <- theta_long %>%
+  group_by(decennie, topic) %>%
+  summarise(moyenne = mean(proportion, na.rm = TRUE), .groups = "drop")
+
+#  3. Graphique en barres verticales
+ggplot(theta_decennie, aes(x = factor(decennie), y = moyenne, fill = topic)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "📊 Évolution thématique par décennie",
+    subtitle = "Proportion moyenne des thèmes STM sur l’Afrique",
+    x = "Décennie", y = "Proportion moyenne", fill = "Thème"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "bottom"
+  )
+```
+
+
+
+```{r}
+####  facettes (un graphique par thème)
+
+
+ggplot(theta_aggregee, aes(x = factor(annee), y = moyenne, fill = topic)) +
+  geom_col(width = 0.7, fill = "#2b8cbe") +
+  facet_wrap(~ topic, scales = "free_y") +
+  labs(
+    title = "📊 Évolution individuelle des thèmes",
+    x = "Année", y = "Proportion moyenne"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+```{r}
+#### Regrouper les années par décennie pour réduire l’encombrement
+
+theta_aggregee <- theta_aggregee %>%
+  mutate(decennie = floor(as.numeric(annee) / 10) * 10)
+
+ggplot(theta_aggregee, aes(x = factor(decennie), y = moyenne)) +
+  geom_col(fill = "#2b8cbe", width = 0.7) +
+  facet_wrap(~ topic, scales = "free_y", ncol = 2) +
+  labs(
+    title = "📊 Évolution thématique par décennie",
+    subtitle = "STM sur l’Afrique : proportion moyenne",
+    x = "Décennie", y = "Proportion"
+  ) +
+  theme_minimal(base_size = 15) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+
+
+
+
+
+
+#### Question 6
+
+
+6.Analyse de réseaux (collaboration entre auteurs, ou entre pays)
+
+
+```{r}
+library(tidyverse)
+library(igraph)
+library(ggraph)
+
+# 1. Construction de l’ensemble des liens (edges)
+edges_discipline <- donnees_valides %>%
+  filter(!is.na(discipline)) %>%
+  select(iid, discipline)
+
+edges_auteur <- donnees_valides %>%
+  filter(!is.na(auteur_africain)) %>%
+  mutate(auteur_type = if_else(auteur_africain, "africain", "non_africain")) %>%
+  select(iid, auteur_type)
+
+# 2. Concaténation des relations document-discipline et document-auteur
+edges_all <- bind_rows(
+  edges_discipline %>% rename(from = iid, to = discipline),
+  edges_auteur %>% rename(from = iid, to = auteur_type)
+)
+
+# 3. Création des nœuds
+nodes <- tibble(name = unique(c(edges_all$from, edges_all$to))) %>%
+  mutate(type = case_when(
+    name %in% donnees_valides$iid ~ "document",
+    name %in% unique(edges_discipline$discipline) ~ "discipline",
+    name %in% c("africain", "non_africain") ~ "origine"
+  ))
+
+# 4. Création du graphe
+graph_all <- graph_from_data_frame(d = edges_all, vertices = nodes, directed = FALSE)
+
+# 5. Visualisation
+set.seed(123)
+ggraph(graph_all, layout = "fr") +
+  geom_edge_link(alpha = 0.3, color = "gray60") +
+  geom_node_point(aes(color = type), size = 4) +
+  geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+  scale_color_manual(values = c("document" = "orange", "discipline" = "blue", "origine" = "darkgreen")) +
+  labs(
+    title = "🌍 Réseau documents – disciplines – origine des auteurs",
+    subtitle = "Analyse des relations entre auteur, domaine et production",
+    color = "Type de nœud"
+  ) +
+  theme_void(base_size = 14)
+
+```
+
+
+
+
+
+`
+
+
+
+
+
+
+```{r}
+# 📦 Chargement des packages nécessaires
+library(tidyverse)
+library(igraph)
+library(ggraph)
+
+# 🧹 1. Nettoyage : s'assurer que chaque document a bien une discipline
+discipline_edges <- donnees_valides %>%
+  filter(!is.na(discipline)) %>%
+  select(iid, discipline)
+
+#  2. Construction d’un graphe biparti (documents ↔ disciplines)
+# On ajoute une colonne pour identifier le type de nœud (utile pour visualiser ensuite)
+nodes <- tibble(
+  name = unique(c(discipline_edges$iid, discipline_edges$discipline)),
+  type = if_else(name %in% discipline_edges$iid, "document", "discipline")
+)
+
+edges <- discipline_edges %>%
+  rename(from = iid, to = discipline)
+
+#  3. Création du graphe biparti avec igraph
+graph_bipartite <- graph_from_data_frame(d = edges, vertices = nodes, directed = FALSE)
+
+#  4. Visualisation du graphe avec ggraph
+set.seed(123)  # pour reproductibilité du layout
+ggraph(graph_bipartite, layout = "fr") +  # 'fr' = Fruchterman-Reingold layout
+  geom_edge_link(alpha = 0.4, color = "gray50") +
+  geom_node_point(aes(color = type), size = 3) +
+  geom_node_text(aes(label = name), repel = TRUE, size = 3, check_overlap = TRUE) +
+  scale_color_manual(values = c("discipline" = "darkblue", "document" = "orange")) +
+  labs(title = "🌐 Réseau biparti : Documents et Disciplines",
+       subtitle = "Lien entre documents (iid) et leur discipline",
+       color = "Type de nœud") +
+  theme_void(base_size = 14)
+
+```
+
+```{r}
+#### Graphique de degré (centralité) des disciplines ou des origines
+
+library(igraph)
+library(tidygraph)
+library(ggraph)
+
+#  Convertir le graphe en objet tidygraph
+graph_tbl <- as_tbl_graph(graph_all)
+
+#  Calcul du degré (nombre de connexions) de chaque nœud
+graph_tbl <- graph_tbl %>%
+  mutate(degre = centrality_degree(),
+         type = ifelse(name %in% donnees_valides$iid, "document",
+                ifelse(name %in% unique(edges_discipline$discipline), "discipline", "origine")))
+
+#  Visualisation : taille du nœud ∝ degré
+set.seed(42)
+ggraph(graph_tbl, layout = "fr") +
+  geom_edge_link(alpha = 0.2) +
+  geom_node_point(aes(size = degre, color = type)) +
+  geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+  scale_color_manual(values = c("document" = "grey70", "discipline" = "steelblue", "origine" = "darkgreen")) +
+  scale_size_continuous(range = c(2, 10)) +
+  labs(title = "📌 Importance des nœuds selon leur degré de centralité",
+       subtitle = "Plus un nœud est connecté, plus il est central dans le réseau",
+       size = "Degré", color = "Type") +
+  theme_void(base_size = 14)
+
+```
+
+
+```{r}
+### Clusterisation des communautés (groupes de disciplines proches)
+
+#  Détection de communautés
+graph_tbl <- graph_tbl %>%
+  mutate(communauté = as.factor(group_louvain()))
+
+#  Visualisation des clusters
+set.seed(2025)
+ggraph(graph_tbl, layout = "fr") +
+  geom_edge_link(alpha = 0.2, color = "grey70") +
+  geom_node_point(aes(color = communauté), size = 4) +
+  geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+  labs(
+    title = "🔗 Groupes de communautés dans le réseau",
+    subtitle = "Détection automatique par cluster de Louvain"
+  ) +
+  theme_void(base_size = 14)
+
+```
+
+
+```{r}
+library(tidyverse)
+library(igraph)
+library(ggraph)
+
+# 1. Identifier les disciplines
+disciplines <- nodes %>%
+  filter(type == "discipline") %>%
+  pull(name)
+
+# 2. Calculer le degré de chaque discipline
+disc_degre <- tibble(
+  discipline = disciplines,
+  degre = map_int(disciplines, ~ degree(graph_all, .x))
+)
+
+# 3. Garder les 3 disciplines les plus connectées
+top_disciplines <- disc_degre %>%
+  arrange(desc(degre)) %>%
+  slice_head(n = 3) %>%
+  pull(discipline)
+
+# 4. Générer les sous-graphes et visualiser
+plots <- map(top_disciplines, function(disc) {
+  # Correction ici : construire le vecteur des sommets avec c()
+  vids <- c(disc, V(graph_all)[neighbors(graph_all, disc, mode = "all")]$name)
+  
+  sous_graphe <- induced_subgraph(graph_all, vids = vids)
+  
+  ggraph(sous_graphe, layout = "fr") +
+    geom_edge_link(alpha = 0.3, color = "gray60") +
+    geom_node_point(aes(color = type), size = 4) +
+    geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+    scale_color_manual(values = c(
+      "document" = "orange",
+      "discipline" = "blue",
+      "origine" = "darkgreen"
+    )) +
+    labs(
+      title = paste("🔍 Sous-réseau autour de :", disc),
+      subtitle = "Documents liés et origine des auteurs",
+      color = "Type de nœud"
+    ) +
+    theme_void(base_size = 14)
+})
+# 5. 📋 Afficher tous les graphes dans une seule page (si souhaité)
+library(patchwork)  # Pour les afficher côte à côte
+wrap_plots(plots, ncol = 1)
+
+```
+
+
+
+```{r}
+library(gridExtra)
+grid.arrange(grobs = plots, ncol = 1)
+
+```
+
+
+
+
+
+
+
+
+#### Question7
+
+7.« Visualisation interactive : Dashboards ou graphiques dynamiques »
+
+```{r}
+####  Code complet pour une App Shiny interactive des sentiments
+
+library(shiny)
+library(plotly)
+library(dplyr)
+library(ggplot2)
+
+ui <- fluidPage(
+  titlePanel("📈 Évolution des sentiments par mot-clé et décennie"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("mot_cle", "Choisir un mot-clé :", 
+                  choices = unique(sentiment_moyen$mot_cle),
+                  selected = "africa"),
+      sliderInput("dec_range", "Décennie :",
+                  min = min(sentiment_moyen$decennie),
+                  max = max(sentiment_moyen$decennie),
+                  value = range(sentiment_moyen$decennie),
+                  sep = "")
+    ),
+    mainPanel(
+      plotlyOutput("plot_sentiment")
+    )
+  )
+)
+
+
+server <- function(input, output) {
+  
+  data_filtered <- reactive({
+    sentiment_moyen %>%
+      filter(
+        mot_cle == input$mot_cle,
+        decennie >= input$dec_range[1],
+        decennie <= input$dec_range[2]
+      )
+  })
+  
+  output$plot_sentiment <- renderPlotly({
+    gg <- ggplot(data_filtered(), aes(x = factor(decennie), y = score_moyen)) +
+      geom_col(fill = "#2b8cbe") +
+      labs(
+        title = paste("📊 Sentiment pour :", input$mot_cle),
+        x = "Décennie", y = "Score moyen"
+      ) +
+      theme_minimal(base_size = 14)
+    
+    ggplotly(gg)
+  })
+}
+
+shinyApp(ui = ui, server = server)
+
+
+```
+
+
+
+
+
+
+
+
+
+

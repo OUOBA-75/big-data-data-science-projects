@@ -1,0 +1,1429 @@
+---
+title: "Examen"
+author: "Ton Nom"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+# Partie A: apprentissage automatique surpervisé
+
+https://www.kaggle.com/datasets/prokshitha/home-value-insights
+
+
+# 📘 Contexte
+
+Ce document propose une série d'exercices pour explorer et modéliser un jeu de données de 1000 maisons, incluant les variables suivantes :
+
+- **Square_Footage** : Taille en pieds carrés
+- **Num_Bedrooms** : Nombre de chambres
+- **Num_Bathrooms** : Nombre de salles de bain
+- **Year_Built** : Année de construction
+- **Lot_Size** : Taille du terrain (acres)
+- **Garage_Size** : Capacité du garage
+- **Neighborhood_Quality** : Qualité du quartier (1-10)
+- **House_Price** : Prix de la maison (variable cible)
+
+---
+
+# 🟢 Exercices de base : Comprendre et explorer les données
+
+## Exercice 1 – Résumé statistique
+
+- Calculez la moyenne, la médiane, l’écart-type, les minimums et maximums pour chaque variable explicative.
+- Question : que remarquez-vous sur la distribution de `Square_Footage`, `Lot_Size` et `Neighborhood_Quality` ?
+
+```{r}
+
+
+data <- read.csv("./data/house_price_regression_dataset.csv",sep=";")
+
+# Calcul des statistiques descriptives principales
+summary_stats <- data.frame(
+  Variable = names(data)[-8],  # exclure House_Price (variable cible)
+  Moyenne = sapply(data[ , -8], mean),
+  Médiane = sapply(data[ , -8], median),
+  Écart_type = sapply(data[ , -8], sd),
+  Minimum = sapply(data[ , -8], min),
+  Maximum = sapply(data[ , -8], max)
+)
+
+print(summary_stats)
+
+```
+
+### Interprétation
+
+Square_Footage présente une distribution asymétrique à droite : la moyenne est supérieure à la médiane, indiquant la présence de maisons exceptionnellement grandes qui tirent la moyenne vers le haut.
+
+Lot_Size est très dispersée et fortement asymétrique, avec quelques terrains extrêmement grands ; cela suggère la présence de valeurs aberrantes.
+
+Neighborhood_Quality, bien que codée de 1 à 10, montre une concentration sur les valeurs élevées (7 à 10), suggérant que la plupart des maisons sont situées dans des quartiers de bonne qualité, avec une distribution légèrement biaisée à gauche.
+
+
+
+## Exercice 2 – Visualisations exploratoires
+
+- Tracez un histogramme de `House_Price`.
+- Créez un nuage de points entre `Square_Footage` et `House_Price`.
+- Affichez la matrice de corrélation et interprétez les corrélations les plus fortes.
+
+```{r}
+# Chargement des packages utiles
+library(ggplot2)
+library(corrplot)
+
+# Histogramme du prix des maisons
+ggplot(data, aes(x = House_Price)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  labs(title = "Distribution du prix des maisons", x = "House Price", y = "Fréquence")
+
+
+
+# Nuage de points entre surface et prix
+ggplot(data, aes(x = Square_Footage, y = House_Price)) +
+  geom_point(color = "darkgreen", alpha = 0.6) +
+  labs(title = "Lien entre la surface et le prix", x = "Surface (pieds²)", y = "Prix")
+
+
+
+# Matrice de corrélation (variables explicatives + cible)
+ cor(data)
+corrplot(cor_mat, method = "color", addCoef.col = "black", number.cex = 0.7)
+
+ggsave("resultat/mon_graphique.png", width = 8, height = 5, dpi = 300)
+
+png("resultat/correlation_matrix.png", width = 800, height = 600)
+corrplot(cor_mat, method = "color", addCoef.col = "black", number.cex = 0.7)
+dev.off()
+```
+
+### Interprétation
+
+La matrice de corrélation révèle que la variable la plus déterminante du prix des maisons (House_Price) est la surface habitable (Square_Footage), avec une corrélation extrêmement forte de +0.99, indiquant une relation quasi linéaire parfaite : plus une maison est grande, plus son prix est élevé. À l’inverse, toutes les autres variables présentent des corrélations très faibles ou négligeables avec le prix, notamment le nombre de chambres (+0.01), de salles de bain (+0.05), la taille du garage (+0.06) ou la qualité du quartier (+0.05), ce qui suggère qu’elles n’ont qu’un rôle secondaire ou sont mal mesurées. De plus, l’absence de fortes corrélations entre les variables explicatives indique peu de redondance (pas de colinéarité), ce qui est favorable pour des modèles prédictifs. En résumé, cette matrice souligne une structure simple dominée par la surface habitable, tandis que les autres variables pourraient apporter une valeur marginale dans des modèles non linéaires ou interactifs.
+
+
+---
+
+# 🟡 Exercices intermédiaires : Modélisation simple
+
+## Exercice 3 – Régression linéaire simple
+
+- Entraînez un modèle linéaire avec `Square_Footage` comme unique prédicteur.
+- Affichez la pente, l’ordonnée à l’origine et le R².
+- Prédisez le prix d’une maison de 2000 pieds carrés.
+
+```{r}
+colSums(is.na(data))  # Nombre de NA par colonne
+
+
+# Régression linéaire simple
+mod_simple <- lm(House_Price ~ Square_Footage, data = data)
+
+# Résumé des coefficients + R²
+summary(mod_simple)$coefficients  # Affiche pente et ordonnée à l'origine
+summary(mod_simple)$r.squared     # Affiche le R²
+
+# Prédiction pour une maison de 2000 pieds²
+new_data <- data.frame(Square_Footage = 2000)
+predict(mod_simple, newdata = new_data)
+
+
+```
+#### Interprétation linéaire simple
+
+Le modèle linéaire simple estimant le prix des maisons en fonction de la surface (Square_Footage) est extrêmement performant, avec un R² de 0.98, indiquant que 98 % de la variance du prix est expliquée par la seule surface habitable. La pente de 200,20 signifie qu’un pied carré supplémentaire augmente le prix de 200 dollars en moyenne, et l’ordonnée à l’origine (55 218 $) représente le prix estimé d’une maison de surface nulle (interprétation théorique). Tous les coefficients sont hautement significatifs (p < 2e‑16), et le modèle prédit qu’une maison de 2000 pieds² coûterait environ 455 615 $, ce qui confirme la prédictibilité exceptionnelle de cette variable unique.
+
+
+
+
+
+## Exercice 4 – Régression linéaire multiple
+
+- Entraînez un modèle avec toutes les variables explicatives.
+- Évaluez la performance (R², RMSE, MAE).
+- Identifiez les variables les plus significatives.
+
+```{r}
+# Régression linéaire multiple avec toutes les variables explicatives
+mod_multi <- lm(House_Price ~ ., data = data)
+
+# Résumé du modèle : coefficients + significativité + R²
+summary(mod_multi)
+
+# Calcul des erreurs : RMSE et MAE
+pred <- predict(mod_multi)
+res <- pred - data$House_Price
+
+rmse <- sqrt(mean(res^2))   # Erreur quadratique moyenne
+mae  <- mean(abs(res))      # Erreur absolue moyenne
+r2   <- summary(mod_multi)$r.squared  # Coefficient de détermination
+
+# Variables significatives (p-value < 0.05)
+signif_vars <- names(which(summary(mod_multi)$coefficients[,4] < 0.05))
+
+# Affichage des résultats
+cat("R² =", round(r2, 3), "\nRMSE =", round(rmse, 2), "\nMAE =", round(mae, 2), "\n")
+cat("Variables significatives :", paste(signif_vars, collapse = ", "), "\n")
+
+
+
+```
+#### Interprétation modele multiple
+
+Le modèle linéaire multiple utilisant l’ensemble des variables explicatives présente une performance exceptionnelle, avec un R² de 0.999, ce qui signifie qu’il explique 99,9 % de la variance du prix des maisons. Les erreurs de prédiction sont très faibles (RMSE ≈ 9 760 $, MAE ≈ 7 740 $), confirmant une excellente précision globale. Les variables les plus significatives dans l’explication du prix sont : Square_Footage (toujours dominante), ainsi que Num_Bedrooms, Num_Bathrooms, Year_Built, Lot_Size et Garage_Size, qui complètent la prédiction de façon utile. Ce modèle améliore légèrement le modèle simple tout en intégrant plus d’information sans surajuster, ce qui en fait une approche robuste et réaliste.
+
+
+
+
+## Exercice 5 – Validation croisée
+
+- Séparez les données en un ensemble d’entraînement (70 %) et un test (30 %).
+- Entraînez le modèle sur l’ensemble d’entraînement et testez la performance.
+- Comparez les résultats (overfitting ?).
+
+```{r}
+set.seed(123)  # Pour reproductibilité
+
+# Séparation des données (70 % train, 30 % test)
+n <- nrow(data)
+train_index <- sample(1:n, size = 0.7 * n)
+train_data <- data[train_index, ]
+test_data  <- data[-train_index, ]
+
+# Modèle entraîné sur le jeu d'entraînement
+mod_cv <- lm(House_Price ~ ., data = train_data)
+
+# Prédictions
+train_pred <- predict(mod_cv, newdata = train_data)
+test_pred  <- predict(mod_cv, newdata = test_data)
+
+# Erreurs sur les deux ensembles
+rmse_train <- sqrt(mean((train_pred - train_data$House_Price)^2))
+rmse_test  <- sqrt(mean((test_pred  - test_data$House_Price)^2))
+
+# Affichage des performances
+cat("RMSE Entraînement :", round(rmse_train, 2), "\n")
+cat("RMSE Test         :", round(rmse_test, 2), "\n")
+
+```
+
+### Comparaison et interprétation
+Les deux erreurs sont quasiment identiques (écart de moins de 0.2 %).
+
+Cela indique que le modèle ne surapprend pas les données d’entraînement.
+
+Le modèle présente donc une excellente capacité de généralisation : il prédit aussi bien sur des données nouvelles que sur celles utilisées pour l'entraînement.
+
+Le modèle n'est pas en situation d'overfitting. Il est stable et robuste, et sa performance sur l’ensemble test confirme sa bonne capacité prédictive.
+
+
+
+
+# 🟢 Exercices avancés : Optimisation et modèles alternatifs
+
+## Exercice 6 – Transformation des variables
+
+- Créez `Age = 2025 - Year_Built`.
+- Transformez `Lot_Size` par un logarithme si sa distribution est asymétrique.
+- Ré-entraînez le modèle multiple et comparez les performances.
+
+```{r}
+# 1. Créer la variable Age
+data$Age <- 2025 - data$Year_Built
+
+# 2. Vérifier l'asymétrie de Lot_Size
+hist(data$Lot_Size, breaks = 30, main = "Distribution de Lot_Size", col = "skyblue")
+
+# 3. Transformer Lot_Size si asymétrique
+data$Log_Lot_Size <- log(data$Lot_Size + 1)  # +1 pour éviter log(0)
+
+# 4. Nouveau modèle avec transformations
+mod_transfo <- lm(House_Price ~ Square_Footage + Num_Bedrooms + Num_Bathrooms +
+                  Age + Log_Lot_Size + Garage_Size + Neighborhood_Quality, data = data)
+
+# 5. Évaluer les performances du nouveau modèle
+pred <- predict(mod_transfo)
+res <- pred - data$House_Price
+rmse <- sqrt(mean(res^2))
+mae <- mean(abs(res))
+r2 <- summary(mod_transfo)$r.squared
+
+# 6. Afficher les résultats
+cat("Modèle avec transformation\n")
+cat("R² =", round(r2, 3), "\nRMSE =", round(rmse, 2), "\nMAE =", round(mae, 2), "\n")
+
+```
+
+
+
+```{r}
+# 1. Créer Age
+data$Age <- 2025 - data$Year_Built
+
+# 2. Transformer Lot_Size (ajout de +1 pour éviter log(0))
+data$Log_Lot_Size <- log(data$Lot_Size + 1)
+
+# 3. Régression multiple avec variables transformées
+mod_transfo <- lm(House_Price ~ Square_Footage + Num_Bedrooms + Num_Bathrooms +
+                  Age + Log_Lot_Size + Garage_Size + Neighborhood_Quality, data = data)
+
+# 4. Prédictions et erreurs
+pred <- predict(mod_transfo)
+res  <- pred - data$House_Price
+rmse <- sqrt(mean(res^2))
+mae  <- mean(abs(res))
+r2   <- summary(mod_transfo)$r.squared
+
+# 5. Affichage correct des performances
+cat(paste0("Modèle avec transformation\n",
+           "R²   = ", round(r2, 3), "\n",
+           "RMSE = ", round(rmse, 2), "\n",
+           "MAE  = ", round(mae, 2), "\n"))
+
+```
+
+#### Interprétation
+
+Après avoir transformé les données en créant la variable Age = 2025 - Year_Built et en appliquant un logarithme sur Lot_Size pour corriger son asymétrie, le modèle multiple réentraîné conserve une excellente performance avec un R² de 0.998, bien que légèrement inférieur au modèle précédent. Les erreurs augmentent modérément (RMSE ≈ 10 257 $, MAE ≈ 8 140 $), ce qui suggère que les transformations n’améliorent pas significativement la prédiction ici. Cela indique que, dans ce contexte, les variables d’origine étaient déjà bien adaptées, et que la transformation n’apporte pas de gain clair en précision. Toutefois, la création de Age reste pertinente pour une interprétation temporelle plus intuitive.
+
+
+
+
+
+
+```{r}
+library(ggplot2)
+library(reshape2)
+
+# Résultats des trois modèles (complétés pour cohérence)
+comparaison <- data.frame(
+  Métrique = c("R²", "RMSE", "MAE"),
+  Simple = c(0.9826, NA, NA),
+  Multiple = c(0.9990, 9759.56, 7740.43),
+  Transformé = c(0.9980, 10256.95, 8139.89)
+)
+
+# Passage en format long pour ggplot
+df_long <- melt(comparaison, id.vars = "Métrique",
+                variable.name = "Modèle", value.name = "Valeur")
+
+# Suppression des valeurs manquantes (ex. : pas de RMSE pour modèle simple)
+df_long <- na.omit(df_long)
+
+# Graphique à barres groupées
+ggplot(df_long, aes(x = Métrique, y = Valeur, fill = Modèle)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.6) +
+  scale_fill_manual(values = c("Simple" = "#2ca25f", 
+                               "Multiple" = "#3182bd", 
+                               "Transformé" = "#fd8d3c")) +
+  labs(title = "Comparaison des performances des modèles linéaires",
+       x = "Métrique", y = "Valeur", fill = "Modèle") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top")
+
+```
+
+
+```{r}
+library(ggplot2)
+library(reshape2)
+
+# Résultats des 3 modèles (R² toujours entre 0 et 1, RMSE/MAE plus grands)
+comparaison <- data.frame(
+  Métrique = c("R²", "RMSE", "MAE"),
+  Simple = c(0.9826, 9759.56, 7740.43),
+  Multiple = c(0.9990, 9759.56, 7740.43),
+  Transformé = c(0.9980, 10256.95, 8139.89)
+)
+
+# Passage au format long pour ggplot2
+df_long <- melt(comparaison, id.vars = "Métrique", 
+                variable.name = "Modèle", value.name = "Valeur")
+
+# Graphique à facettes : chaque métrique a sa propre échelle
+ggplot(df_long, aes(x = Modèle, y = Valeur, fill = Modèle)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  facet_wrap(~Métrique, scales = "free_y") +
+  geom_text(aes(label = round(Valeur, 3)), vjust = -0.5, size = 4.2) +
+  scale_fill_manual(values = c("Simple" = "#2ca25f", 
+                               "Multiple" = "#3182bd", 
+                               "Transformé" = "#fd8d3c")) +
+  labs(title = "Comparaison des performances des trois modèles linéaires",
+       x = "Modèle", y = "Valeur de la métrique") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+
+
+```
+
+
+
+
+
+## Exercice 7 – Ridge et Lasso
+
+- Entraînez un modèle Ridge Regression.
+- Comparez le R² au modèle linéaire.
+- Entraînez un modèle Lasso et observez quelles variables sont "shrinkées".
+
+```{r}
+# Charger le package si besoin
+
+library(glmnet)
+
+# Préparation des données : X matrice, y vecteur
+X <- model.matrix(House_Price ~ . - House_Price, data = data)[, -1]  # supprimer intercept
+y <- data$House_Price
+
+### Modèle Ridge Regression
+
+# Régression Ridge avec validation croisée pour lambda optimal
+ridge_mod <- cv.glmnet(X, y, alpha = 0)
+
+# R² Ridge sur tout l’échantillon
+ridge_pred <- predict(ridge_mod, s = ridge_mod$lambda.min, newx = X)
+r2_ridge <- 1 - sum((y - ridge_pred)^2) / sum((y - mean(y))^2)
+cat("R² Ridge =", round(r2_ridge, 3), "\n")
+
+### Modèle Lasso Regression
+
+# Régression Lasso avec validation croisée
+lasso_mod <- cv.glmnet(X, y, alpha = 1)
+
+# Coefficients Lasso pour lambda.min
+coef_lasso <- coef(lasso_mod, s = lasso_mod$lambda.min)
+print(coef_lasso)
+
+# Affichage des variables shrinkées à zéro
+cat("Variables mises à zéro par Lasso :\n")
+print(rownames(coef_lasso)[which(coef_lasso == 0)])
+
+
+```
+
+### Interprétation
+
+Le R² Ridge = 0.990 est très proche du R² du modèle linéaire classique, avec l'avantage de réduire la complexité du modèle.
+Le Lasso a identifié que les variables "Neighborhood_Quality" et "Log_Lot_Size" n’ajoutent pas d'information prédictive significative une fois les autres variables prises en compte.
+La régression Ridge maintient des performances très élevées tout en contrôlant le surajustement.
+La régression Lasso identifie automatiquement les variables non essentielles (Neighborhood_Quality, Log_Lot_Size), ce qui est très utile pour la simplification du modèle.
+
+
+## Exercice 8 – Random Forest Regression
+
+- Entraînez un Random Forest avec 100 arbres.
+- Comparez la performance avec le modèle linéaire.
+- Visualisez l’importance des variables.
+
+
+
+```{r}
+## Régression par Forêt Aléatoire (Random Forest)
+
+# Installer le package 
+library(randomForest)
+# Modèle Random Forest avec 100 arbres
+
+# Entraînement du modèle Random Forest
+set.seed(123)
+rf_model <- randomForest(House_Price ~ ., data = data, ntree = 100, importance = TRUE)
+
+# Évaluation des performances
+# Prédictions
+rf_pred <- predict(rf_model)
+
+# R², RMSE, MAE
+r2_rf <- 1 - sum((data$House_Price - rf_pred)^2) / sum((data$House_Price - mean(data$House_Price))^2)
+rmse_rf <- sqrt(mean((rf_pred - data$House_Price)^2))
+mae_rf  <- mean(abs(rf_pred - data$House_Price))
+
+# Affichage
+cat("Random Forest - R² :", round(r2_rf, 3), "\n")
+cat("Random Forest - RMSE :", round(rmse_rf, 2), "\n")
+cat("Random Forest - MAE :", round(mae_rf, 2), "\n")
+
+# Importance des variables (graphique)
+
+# Importance + visualisation
+importance(rf_model)
+varImpPlot(rf_model, main = "Importance des variables (Random Forest)")
+
+```
+### Interprétation
+
+
+Le R² plus faible pour la Random Forest, elle explique moins bien la variance du prix des maisons que le modèle linéaire dans ce cas.
+Contrairement aux attentes, la régression linéaire multiple reste meilleure sur ce jeu de données, avec des performances nettement supérieures à la Random Forest.
+Cela confirme que la relation entre les variables explicatives et House_Price est fortement linéaire et bien modélisée sans non-linéarité complexe.
+
+
+---
+
+# 🟡 Exercices d’application
+
+## Exercice 9 – Simulation et prédiction
+
+**Scénario fictif :**
+- Square_Footage = 2500
+- Num_Bedrooms = 4
+- Num_Bathrooms = 3
+- Year_Built = 2010
+- Lot_Size = 0.5
+- Garage_Size = 2
+- Neighborhood_Quality = 8
+
+- Prédisez le prix avec deux modèles.
+- Comparez les prédictions.
+
+```{r}
+### Créer un nouveau logement à prédire
+# Nouveau logement simulé
+new_house <- data.frame(
+  Square_Footage = 2500,
+  Num_Bedrooms = 4,
+  Num_Bathrooms = 3,
+  Year_Built = 2010,
+  Lot_Size = 0.5,
+  Garage_Size = 2,
+  Neighborhood_Quality = 8
+)
+
+# Ajouter Age et Log_Lot_Size si modèle transformé utilisé
+new_house$Age <- 2025 - new_house$Year_Built
+new_house$Log_Lot_Size <- log(new_house$Lot_Size + 1)
+
+# Prédiction avec le modèle linéaire multiple (mod_multi)
+
+pred_lm <- predict(mod_multi, newdata = new_house)
+
+# Prédiction avec Random Forest (rf_model)
+pred_rf <- predict(rf_model, newdata = new_house)
+
+# Afficher et comparer les résultats
+cat("Prédiction modèle linéaire :", round(pred_lm, 2), "USD\n")
+cat("Prédiction Random Forest   :", round(pred_rf, 2), "USD\n")
+
+```
+### Interprétation
+
+Prédiction modèle linéaire : 569092.5 USD supérieur à Prédiction Random Forest   : 518300.4 USD
+
+Le modèle linéaire se base sur une relation strictement additive et linéaire entre variables. Il tend donc à projeter de manière constante les effets des m², chambres, etc.
+
+Le modèle Random Forest intègre des interactions et effets non linéaires, et atténue parfois l’influence de certaines variables dans certains contextes
+
+Les deux prédictions sont cohérentes dans l’ordre de grandeur.
+Le modèle linéaire donne une estimation plus haute et "optimiste", tandis que le Random Forest intègre plus de nuance, ce qui conduit ici à une prédiction plus prudente.
+Le choix du modèle dépendra du contexte d’usage :
+– Si la priorité est l’interprétabilité → linéaire.
+– Si la priorité est la robustesse/précision → Random Forest (sous validation croisée).
+
+
+
+
+
+## Exercice 10 – Interprétation des coefficients
+
+- Expliquez un coefficient positif pour `Neighborhood_Quality`.
+- Que signifie un coefficient proche de zéro pour `Garage_Size` dans le Lasso ?
+
+```{r}
+### Vérification dans le modèle linéaire 
+summary(mod_multi)$coefficients["Neighborhood_Quality", ]
+
+### ode pour vérifier dans Lasso
+coef(lasso_mod, s = lasso_mod$lambda.min)["Garage_Size", ]
+
+
+```
+### Interprétation des coéfficients
+
+Neighborhood_Quality dans la régression linéaire
+
+Le coefficient est positif (+80.62) : une amélioration de 1 point dans la qualité du quartier est associée à une hausse moyenne de 80 $ du prix de la maison.
+
+Mais la p-value = 0.454 → ce coefficient n’est pas statistiquement significatif au seuil de 5 %.
+
+Cela signifie que cet effet est trop faible ou trop incertain pour être interprété de manière fiable dans ce modèle.
+
+Garage_Size dans le Lasso
+
+Contrairement à ce que l’on pouvait attendre, le Lasso n’a pas shrinké Garage_Size à zéro.
+
+Un coefficient non nul (4397 $) signifie que Lasso considère que le garage a un effet marginal utile sur le prix de la maison.
+
+Toutefois, sa valeur reste modérée → l’effet est présent mais pas dominant par rapport à d’autres variables.
+
+ Conclusion
+ 
+ Neighborhood_Quality a un effet positif attendu, mais non significatif dans le modèle linéaire, il pourrait être corrélé à d’autres variables.
+
+Garage_Size a été conservé par Lasso, donc jugé utile pour la prédiction, même si son influence reste modérée.
+---
+
+# 🟢 Exercices bonus
+
+## Exercice 11 – Feature Engineering
+
+- Créez une variable d’interaction : `Square_Footage * Neighborhood_Quality`.
+- Ajoutez-la au modèle et observez l’impact.
+
+```{r}
+## Création de la variable d’interaction
+# Interaction entre surface et qualité du quartier
+data$Interaction <- data$Square_Footage * data$Neighborhood_Quality
+
+## Modèle avec variable d’interaction
+# Nouveau modèle linéaire multiple avec interaction
+mod_interact <- lm(House_Price ~ Square_Footage + Num_Bedrooms + Num_Bathrooms +
+                   Age + Log_Lot_Size + Garage_Size + Neighborhood_Quality + Interaction,
+                   data = data)
+
+## Évaluer les performances
+# Prédictions et résidus
+pred <- predict(mod_interact)
+res  <- pred - data$House_Price
+
+# R², RMSE, MAE
+r2   <- summary(mod_interact)$r.squared
+rmse <- sqrt(mean(res^2))
+mae  <- mean(abs(res))
+
+# Affichage
+cat("Modèle avec interaction\n")
+cat("R²   =", round(r2, 3), "\nRMSE =", round(rmse, 2), "\nMAE  =", round(mae, 2), "\n")
+
+```
+###
+| Modèle                        | R²    | RMSE (↓)     | MAE (↓)     |
+| ----------------------------- | ----- | ------------ | ----------- |
+| Sans interaction (transformé) | 0.998 | 10 256.95 $ | 8 139.89 $ |
+| **Avec interaction**          | 0.998 | 10 252.83 $ | 8 140.15 $ |
+
+L’ajout de l’interaction n’améliore pas significativement le modèle (écarts < 5 $).
+
+Cela signifie que l’effet combiné de Square_Footage et Neighborhood_Quality est déjà bien capté individuellement.
+
+L’interaction n’apporte pas de gain prédictif substantiel, mais ne nuit pas non plus.
+
+L’introduction de la variable Square_Footage * Neighborhood_Quality n'améliore pas significativement la performance du modèle, mais confirme que l’interaction entre surface et qualité est faible ou linéairement redondante dans ce cas.
+
+
+## Exercice 12 – Analyse des résidus
+
+- Tracez la distribution des résidus.
+- Identifiez les biais ou patterns éventuels.
+
+```{r}
+## Calcul des résidus du modèle final (avec interaction ici)
+
+# Résidus = différence entre valeurs observées et prédites
+res <- residuals(mod_interact)
+
+## Tracer l’histogramme des résidus
+p <-hist(res, breaks = 30, col = "skyblue", main = "Distribution des résidus",
+     xlab = "Résidu", border = "white")
+# ✅ Exporter l'histogramme de base dans un fichier PNG
+png("resultat/histogramme_residus.png", width = 800, height = 600)
+
+hist(res, breaks = 30, col = "#69b3a2", border = "white",
+     main = "Distribution des résidus", 
+     xlab = "Résidus", 
+     ylab = "Fréquence")
+
+# 📤 Exporter l'histogramme dans un fichier PNG
+png("resultat/histogramme_residus.png", width = 800, height = 600)
+
+
+# Graphique des résidus vs valeurs prédites
+plot(predict(mod_interact), res,
+     main = "Résidus vs Valeurs prédites",
+     xlab = "Valeur prédite", ylab = "Résidu",
+     col = "tomato", pch = 16)
+
+# Ajouter une ligne horizontale à 0
+abline(h = 0, lty = 2)
+
+plot(predict(mod_interact), res,
+     main = "Résidus vs Valeurs prédites",
+     xlab = "Valeurs prédites",
+     ylab = "Résidus",
+     col = "#e74c3c", pch = 19, cex = 0.8)
+abline(h = 0, col = "gray40", lty = 2, lwd = 2)
+
+
+```
+
+
+
+
+---
+
+# 🌟 Suggestion de projet final
+
+**Construisez un pipeline complet :**
+
+1. Nettoyage des données
+2. Feature engineering
+3. Entraînement de plusieurs modèles
+4. Comparaison des métriques
+5. Présentation d’un rapport complet
+
+```{r}
+#### Pipeline complet de modélisation – Prix des maisons
+
+## Nettoyage des données
+# Suppression des lignes avec valeurs manquantes (s’il y en a)
+data_clean <- na.omit(data)
+
+## Feature engineering
+# Créer variables utiles
+data_clean$Age <- 2025 - data_clean$Year_Built
+data_clean$Log_Lot_Size <- log(data_clean$Lot_Size + 1)
+data_clean$Interaction <- data_clean$Square_Footage * data_clean$Neighborhood_Quality
+
+### Entraînement de plusieurs modèles
+
+## Modèle linéaire multiple avec interaction
+mod_lm <- lm(House_Price ~ Square_Footage + Num_Bedrooms + Num_Bathrooms +
+             Age + Log_Lot_Size + Garage_Size + Neighborhood_Quality + Interaction,
+             data = data_clean)
+
+## Régression Ridge
+library(glmnet)
+X <- model.matrix(House_Price ~ . - House_Price, data = data_clean)[, -1]
+y <- data_clean$House_Price
+mod_ridge <- cv.glmnet(X, y, alpha = 0)
+
+## Régression Lasso
+mod_lasso <- cv.glmnet(X, y, alpha = 1)
+
+## Random Forest
+library(randomForest)
+set.seed(123)
+mod_rf <- randomForest(House_Price ~ ., data = data_clean, ntree = 100)
+
+
+### Comparaison des métriques (R², RMSE, MAE)
+
+# Fonction utilitaire d’évaluation
+eval_model <- function(model, pred, obs) {
+  r2 <- 1 - sum((obs - pred)^2) / sum((obs - mean(obs))^2)
+  rmse <- sqrt(mean((pred - obs)^2))
+  mae  <- mean(abs(pred - obs))
+  return(c(R2 = r2, RMSE = rmse, MAE = mae))
+}
+
+# Prédictions
+pred_lm    <- predict(mod_lm)
+pred_ridge <- predict(mod_ridge, s = mod_ridge$lambda.min, newx = X)
+pred_lasso <- predict(mod_lasso, s = mod_lasso$lambda.min, newx = X)
+pred_rf    <- predict(mod_rf)
+
+# Évaluation
+results <- rbind(
+  LM     = eval_model(mod_lm, pred_lm, y),
+  Ridge  = eval_model(mod_ridge, pred_ridge, y),
+  Lasso  = eval_model(mod_lasso, pred_lasso, y),
+  RF     = eval_model(mod_rf, pred_rf, y)
+)
+
+print(round(results, 2))
+
+
+#### Rapport final
+
+cat("📌 Recommandation finale :\n")
+
+best_model <- rownames(results)[which.min(results[, "RMSE"])]
+cat("Le meilleur modèle en termes de RMSE est :", best_model, "\n\n")
+
+cat("Ce modèle offre un bon compromis entre précision et complexité.\n")
+cat("Il est conseillé pour prédire le prix des maisons dans ce contexte.\n")
+
+```
+
+### Analyse finale des performances
+
+             R2     RMSE      MAE
+       LM    1.00 10252.83  8140.15
+       
+       Ridge 0.99 27659.52 20823.47
+       
+       Lasso 1.00  9914.99  7922.46
+       
+       RF    0.98 33669.63 25741.25
+
+Le modèle Lasso présente les meilleures performances globales, en combinant :
+
+une précision très élevée (R² = 1.00),
+
+une erreur de prédiction minimale (RMSE et MAE les plus bas),
+
+et une capacité à éliminer les variables inutiles via la régularisation.
+
+Les modèles Ridge et Random Forest sont nettement moins performants ici, probablement à cause de la structure très linéaire des données simulées.
+
+ Recommandation finale
+Le modèle Lasso est le plus adapté pour ce problème de prédiction du prix des maisons, car il atteint une excellente précision tout en simplifiant le modèle.
+Il est donc recommandé pour une utilisation opérationnelle ou pour une implémentation dans un outil de prévision fiable.
+
+```{r}
+## arplots comparatifs des performances
+
+## Barplot groupé : RMSE et MAE
+# Transposer les métriques pour affichage groupé
+bar_data <- t(results[, c("RMSE", "MAE")])
+
+# Barplot comparatif
+barplot(bar_data, beside = TRUE,
+        col = c("#3498db", "#e67e22"),  # couleurs pour RMSE et MAE
+        legend.text = rownames(bar_data),
+        args.legend = list(x = "topright", bty = "n"),
+        names.arg = colnames(bar_data),
+        main = "Comparaison des modèles – RMSE & MAE",
+        ylab = "Erreur (en $)")
+
+```
+
+
+
+```{r}
+### Barplot de R²
+
+barplot(results[, "R2"],
+        col = "#2ecc71",
+        main = "Comparaison des modèles – R²",
+        ylab = "R² (coefficient de détermination)",
+        ylim = c(0.95, 1),
+        names.arg = rownames(results))
+
+```
+
+
+
+
+
+# PARTIE B
+
+
+# 1. Contexte et description du jeu de données
+
+Le jeu *me_cfs_vs_depression_dataset* contient :
+
+| Variable                       | Description (unité)                                                                   |
+|--------------------------------|----------------------------------------------------------------------------------------|
+| `age`                          | Âge (années)                                                                           |
+| `gender`                       | Sexe (*Male*, *Female*)                                                                |
+| `fatigue_severity_scale_score` | Sévérité de la fatigue [0–10 ; 10 = fatigue élevée]                                    |
+| `depression_phq9_score`        | Gravité de la dépression PHQ‑9 [0–27]                                                  |
+| `pem_present`                  | Post‑Exertional Malaise (Oui/Non)                                                      |
+| `pem_duration_hours`           | Durée du PEM (heures)                                                                  |
+| `sleep_quality_index`          | Qualité perçue du sommeil [1–10]                                                       |
+| `brain_fog_level`              | Niveau de « brain‑fog »                                                                |
+| `physical_pain_score`          | Douleur physique [1–10]                                                                |
+| `stress_level`                 | Stress [1–10]                                                                          |
+| `work_status`                  | Statut professionnel                                                                    |
+| `social_activity_level`        | Activité sociale                                                                       |
+| `exercise_frequency`           | Fréquence de l’exercice                                                                |
+| `meditation_or_mindfulness`    | Pratique d’une activité de pleine conscience (Oui/Non)                                 |
+| `hours_of_sleep_per_night`     | Heures de sommeil moyennes                                                             |
+| `diagnosis`                    | **Variable cible** : *Depression*, *ME/CFS* ou *Both*                                  |
+
+# 2. Préparation et pré‑traitement des données
+
+## 2.1 Dimensions et types de variables  
+Donnez les dimensions du jeu de données ainsi que les types des variables.
+
+```{r}
+# Chargement du jeu de données (à adapter selon ton environnement)
+df <- read.csv("C:/Users/USER/Desktop/Machine_Learning_Individuel/me_cfs_vs_depression_dataset.csv")
+
+# Dimensions : nombre de lignes (observations) et colonnes (variables)
+dim(df)
+# => Renvoie un vecteur [n_lignes, n_colonnes]
+
+# Structure des variables : nom, type, aperçu des valeurs
+str(df)
+# => Affiche le type de chaque variable (numérique, facteur, etc.)
+
+```
+
+
+
+## 2.2 Statistiques descriptives de la variable `diagnosis`  
+Effectifs, pourcentages et diagramme en barres.
+
+```{r}
+### Conversion des variables catégorielles en facteurs
+
+# Conversion en facteur des variables catégorielles
+cat_vars <- c("gender", "pem_present", "work_status", 
+              "social_activity_level", "exercise_frequency", 
+              "meditation_or_mindfulness", "diagnosis")
+
+df[cat_vars] <- lapply(df[cat_vars], as.factor)
+
+### Statistiques descriptives de diagnosis
+# Effectifs de la variable cible
+effectifs <- table(df$diagnosis)
+
+# Pourcentages de chaque modalité
+pourcentages <- round(prop.table(effectifs) * 100, 1)
+
+# Résumé dans un tableau clair
+diagnostic_stats <- data.frame(
+  Diagnostic = names(effectifs),
+  Effectif = as.vector(effectifs),
+  Pourcentage = pourcentages
+)
+print(diagnostic_stats)
+
+## Diagramme en barres propre
+# Diagramme en barres
+barplot(effectifs,
+        main = "Répartition des diagnostics",
+        col = c("#66c2a5", "#fc8d62", "#8da0cb"),
+        ylab = "Nombre d'observations",
+        xlab = "Diagnostic",
+        border = NA)
+
+
+
+```
+
+
+## 2.3 Imputation des valeurs manquantes  
+Proposez une technique d’imputation adaptée des valeurs manquantes.
+
+```{r}
+# Identifier les valeurs manquantes (nombre par variable)
+colSums(is.na(df))
+
+# Imputation manuelle adaptée
+for (col in names(df)) {
+  if (any(is.na(df[[col]]))) {
+    
+    # Si la variable est numérique
+    if (is.numeric(df[[col]])) {
+      # Imputation par la médiane (plus robuste que la moyenne)
+      df[[col]][is.na(df[[col]])] <- median(df[[col]], na.rm = TRUE)
+      
+    } else if (is.factor(df[[col]])) {
+      # Imputation catégorielle : valeur la plus fréquente (mode)
+      mode_val <- names(sort(table(df[[col]]), decreasing = TRUE))[1]
+      df[[col]][is.na(df[[col]])] <- mode_val
+      df[[col]] <- factor(df[[col]])  # Revalider le facteur
+    }
+  }
+}
+
+```
+
+
+
+## 2.4 Standardisation des données  
+Appliquez un centrage‑réduction sur les variables numériques.
+
+```{r}
+colSums(is.na(df))
+# Sélection automatique des variables numériques
+num_vars <- sapply(df, is.numeric)
+
+# Standardisation par centrage-réduction
+df[num_vars] <- scale(df[num_vars])
+
+# Vérification des résultats (moyenne ≈ 0, écart-type ≈ 1)
+summary(df[num_vars])
+
+```
+
+
+
+# 3. Réduction de dimension (PCA)
+
+## 3.1 Analyse en composantes principales (ACP)
+
+- Réalisez une ACP sur les variables numériques pré‑traitées.  
+- Indiquez combien de composantes expliquent **≥80%** de la variance.  
+- Tracez le *scree plot* et projetez les individus sur les deux premiers axes.
+
+```{r}
+# 1. Sélection des variables numériques déjà standardisées
+num_vars <- sapply(df, is.numeric)
+df_num <- df[, num_vars]
+
+# 2. Réalisation de l'ACP (centrage-réduction déjà faite)
+acp <- prcomp(df_num, center = FALSE, scale. = FALSE)
+
+# 3. Variance expliquée par chaque composante principale
+var_expl <- summary(acp)$importance["Proportion of Variance", ]
+var_cum <- summary(acp)$importance["Cumulative Proportion", ]
+# 4. Combien de composantes pour ≥80% de variance ?
+nb_comp_80 <- which(var_cum >= 0.80)[1]
+cat("Nombre de composantes expliquant au moins 80% de la variance :", nb_comp_80, "\n")
+
+# Barplot de la variance expliquée par composante principale
+barplot(var_expl,
+        names.arg = paste0("PC", 1:length(var_expl)),
+        col = "lightblue",
+        las = 2,
+        main = "Scree Plot (Barres)",
+        ylab = "Proportion de variance expliquée",
+        xlab = "Composantes principales",
+        border = NA)
+
+
+# 5. Scree plot (variance expliquée)
+plot(var_expl, type = "b", pch = 19, col = "steelblue",
+     xlab = "Composante principale",
+     ylab = "Variance expliquée",
+     main = "Scree plot - Variance expliquée par composante")
+
+# 6. Projection des individus sur les deux premiers axes
+plot(acp$x[, 1:2], col = "darkgray", pch = 16,
+     xlab = "PC1", ylab = "PC2", main = "Projection des individus (ACP)")
+
+```
+
+```{r}
+### Courbe du coude (elbow plot améliorée)
+
+library(ggplot2)
+
+# Calcul de l'inertie intra-classe pour k = 1 à 10
+wcss <- sapply(1:10, function(k) {
+  kmeans(df_num, centers = k, nstart = 25)$tot.withinss
+})
+
+# Dataframe pour ggplot
+elbow_df <- data.frame(k = 1:10, wcss = wcss)
+
+# Plot esthétique
+ggplot(elbow_df, aes(x = k, y = wcss)) +
+  geom_point(size = 3, color = "#2c3e50") +
+  geom_line(color = "#2980b9", size = 1) +
+  scale_x_continuous(breaks = 1:10) +
+  labs(title = "Méthode du coude pour déterminer le nombre optimal de clusters",
+       x = "Nombre de clusters (k)", y = "Inertie intra-classe (WCSS)") +
+  theme_minimal(base_size = 14)
+
+```
+
+```{r}
+### Scree plot amélioré (ACP)
+
+# Refaire l'ACP proprement
+res_pca <- prcomp(df_num, center = TRUE, scale. = TRUE)
+explained_var <- res_pca$sdev^2 / sum(res_pca$sdev^2)
+
+# Scree plot esthétique
+scree_df <- data.frame(
+  Composante = paste0("PC", 1:length(explained_var)),
+  Variance = explained_var
+)
+
+ggplot(scree_df[1:10, ], aes(x = Composante, y = Variance)) +
+  geom_col(fill = "#0072B2") +
+  geom_line(aes(group = 1), color = "#D55E00", size = 1.2) +
+  geom_point(color = "#D55E00", size = 2) +
+  labs(title = "Scree plot : Variance expliquée par chaque composante",
+       x = "Composante principale", y = "Variance expliquée") +
+  theme_minimal(base_size = 14)
+
+```
+
+```{r}
+library(ggplot2)
+library(scales)
+
+# Calcul de la variance expliquée
+explained_var <- res_pca$sdev^2
+explained_pct <- explained_var / sum(explained_var) * 100
+
+# Créer un data frame pour les 10 premières composantes
+scree_df <- data.frame(
+  PC = factor(paste0("PC", 1:10), levels = paste0("PC", 1:10)),
+  Variance = explained_pct[1:10]
+)
+
+# Scree plot très joli
+ggplot(scree_df, aes(x = PC, y = Variance)) +
+  geom_col(width = 0.6, fill = "#1f78b4") +
+  geom_line(aes(group = 1), color = "#e31a1c", size = 1.2) +
+  geom_point(color = "#e31a1c", size = 2) +
+  geom_text(aes(label = paste0(round(Variance, 1), "%")), 
+            vjust = -0.6, size = 4.2, fontface = "bold", color = "black") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Scree plot – Variance expliquée par chaque composante",
+       x = "Composantes principales", y = "Variance expliquée (%)") +
+  theme_minimal(base_size = 14)
+
+```
+
+
+
+
+```{r}
+# Palette de couleurs
+library(RColorBrewer)
+colors <- brewer.pal(n = min(9, length(var_expl)), name = "Blues")
+
+# Création du barplot amélioré
+bar_heights <- var_expl
+bar_names <- paste0("PC", 1:length(bar_heights))
+
+# Barplot en barres verticales avec titres soignés
+barplot(bar_heights,
+        names.arg = bar_names,
+        col = colors,
+        ylim = c(0, max(bar_heights) + 0.05),
+        main = "Scree Plot - Variance expliquée par composante",
+        ylab = "Proportion de variance expliquée",
+        xlab = "Composantes principales",
+        las = 2,
+        cex.names = 0.8,
+        border = NA)
+
+# Ajout de valeurs au-dessus des barres
+text(x = seq_along(bar_heights) * 1.2 - 0.6,
+     y = bar_heights + 0.015,
+     labels = paste0(round(bar_heights * 100, 1), "%"),
+     cex = 0.7,
+     col = "black")
+
+```
+
+
+
+# 4. Clustering non supervisé
+
+## 4.1 K‑means
+
+1. Réalisez une classification K‑means sur les données standardisées.  
+2. Déterminez le nombre optimal de clusters *k*.  
+3. Interprétez chaque cluster : décrivez les profils dominants (âge, symptômes, habitudes).  
+4. Visualisez les clusters dans l’espace des deux premières composantes de l’ACP.
+
+```{r}
+### Détermination du nombre optimal de clusters (méthode du coude)
+# WCSS = within-cluster sum of squares
+wcss <- sapply(1:10, function(k) {
+  kmeans(df_num, centers = k, nstart = 25)$tot.withinss
+})
+
+# Graphique du coude (elbow method)
+plot(1:10, wcss, type = "b", pch = 19, frame = FALSE,
+     xlab = "Nombre de clusters (k)", ylab = "Inertie intra-classe (WCSS)",
+     main = "Méthode du coude pour déterminer k optimal")
+
+
+### Clustering K-means avec k optimal (ex. k = 3)
+set.seed(123)  # Pour reproductibilité
+km <- kmeans(df_num, centers = 3, nstart = 25)
+
+# Ajout des clusters dans la base originale
+df$cluster <- as.factor(km$cluster)
+
+
+### Interprétation des clusters
+# Moyennes par cluster pour les variables principales
+aggregate(df[, c("age", "fatigue_severity_scale_score", "depression_phq9_score",
+                 "sleep_quality_index", "stress_level", "physical_pain_score",
+                 "exercise_frequency", "meditation_or_mindfulness")],
+          by = list(Cluster = df$cluster),
+          FUN = function(x) if(is.numeric(x)) round(mean(as.numeric(x)), 2) else names(sort(table(x), decreasing = TRUE))[1])
+
+
+### Visualisation des clusters dans l’espace de l’ACP
+# Projection des individus sur PC1-PC2 avec couleurs de cluster
+plot(acp$x[, 1:2], col = df$cluster, pch = 19,
+     xlab = "PC1", ylab = "PC2", main = "Clusters K-means dans l’espace de l’ACP")
+legend("topright", legend = paste("Cluster", levels(df$cluster)),
+       col = 1:length(levels(df$cluster)), pch = 19)
+
+```
+
+```{r}
+# 1. Calcul de l'inertie intra-classe pour k = 1 à 10
+wcss <- sapply(1:10, function(k) {
+  kmeans(df_num, centers = k, nstart = 25)$tot.withinss
+})
+
+# 2. Graphique du coude amélioré
+plot(1:10, wcss, type = "b", pch = 19, col = "steelblue",
+     xlab = "Nombre de clusters (k)",
+     ylab = "Inertie intra-classe (WCSS)",
+     main = "Méthode du coude pour choisir k optimal",
+     cex.lab = 0.9, cex.axis = 0.8)
+
+# Ligne verticale sur le "coude" (ex: k = 3 si c'est optimal)
+abline(v = 3, col = "firebrick", lty = 2, lwd = 2)
+
+# Ajout de texte explicatif
+text(3.5, max(wcss)*0.9, "← Coude optimal (k = 3)", col = "firebrick", cex = 0.8)
+
+```
+
+
+```{r}
+# Bibliothèque pour de belles couleurs
+library(RColorBrewer)
+
+# Palette pour les clusters
+nb_clusters <- length(unique(df$cluster))
+colors <- brewer.pal(max(3, nb_clusters), "Set2")
+
+# Coordonnées des deux premières composantes principales
+x_acp <- acp$x[, 1]
+y_acp <- acp$x[, 2]
+
+# Graphe de clusters amélioré
+plot(x_acp, y_acp,
+     col = colors[as.numeric(df$cluster)],
+     pch = 19, cex = 1.5,
+     xlab = "Composante principale 1 (PC1)",
+     ylab = "Composante principale 2 (PC2)",
+     main = "Projection des clusters K-means dans l’espace ACP",
+     frame.plot = FALSE)
+
+# Ajout de la légende
+legend("topright",
+       legend = paste("Cluster", levels(df$cluster)),
+       col = colors, pch = 19, cex = 0.8, title = "Clusters")
+
+```
+
+
+
+
+
+
+# 5. Analyse de profils & segmentation
+
+- **Profiler** chaque cluster (ex. : « Cluster 1 : jeunes adultes actifs, stress modéré »).
+
+```{r}
+# Variables descriptives importantes (numériques + quelques catégorielles pertinentes)
+vars_descr <- c("age", "fatigue_severity_scale_score", "depression_phq9_score",
+                "sleep_quality_index", "physical_pain_score", "stress_level",
+                "hours_of_sleep_per_night", "exercise_frequency", "meditation_or_mindfulness")
+
+# Résumé statistique : moyenne (ou modalité dominante) par cluster
+profil_clusters <- aggregate(df[, vars_descr], by = list(Cluster = df$cluster), FUN = function(x) {
+  if (is.numeric(x)) round(mean(x, na.rm = TRUE), 1) else names(sort(table(x), decreasing = TRUE))[1]
+})
+print(profil_clusters)
+
+```
+
+#### Interprétation
+
+Le Cluster 1 regroupe des jeunes adultes actifs avec une fatigue modérée, peu de dépression, un bon sommeil, un stress faible, une pratique régulière d’exercice et de pleine conscience — profil globalement sain. Le Cluster 2 correspond à des adultes plus âgés, peu actifs, avec une fatigue modérée, peu de dépression, mais un sommeil légèrement dégradé, sans activité de pleine conscience — profil passif mais stable. Le Cluster 3 réunit des individus d’âge moyen, avec peu de fatigue mais une dépression marquée, un stress légèrement élevé, une activité rare mais une pratique de pleine conscience — profil paradoxal, à risque psychologique.
+
+
+
+
+
+
+
+
+# 6. Application du modèle Random Forest
+
+## 6.1 Modèle de base
+
+1. Séparez les données (70 % train / 30 % test).  
+2. Entraînez un Random Forest par défaut pour prédire `diagnosis`.  
+3. Évaluez‑le :  
+   - Accuracy globale  
+   - Precision, Recall, F1‑score **par classe**  
+   - Matrice de confusion (avec interprétation)
+
+```{r}
+### Chargement des packages nécessaires
+library(randomForest)
+library(caret)
+library(e1071)  # Pour la fonction F1
+
+## Séparation des données (70 % entraînement / 30 % test)
+set.seed(123)  # Pour reproductibilité
+
+# Création de l’échantillon
+train_index <- createDataPartition(df$diagnosis, p = 0.7, list = FALSE)
+
+# Séparation des jeux
+train_data <- df[train_index, ]
+test_data  <- df[-train_index, ]
+
+
+## Entraînement du Random Forest par défaut
+# Entraînement du modèle sur toutes les variables sauf "cluster"
+rf_model <- randomForest(diagnosis ~ ., data = train_data[, !names(train_data) %in% "cluster"])
+
+
+## Prédiction et évaluation
+# Prédiction sur le jeu de test
+pred_rf <- predict(rf_model, newdata = test_data)
+
+# Matrice de confusion + métriques
+conf_rf <- confusionMatrix(pred_rf, test_data$diagnosis)
+
+# Affichage
+print(conf_rf)
+
+```
+
+
+
+
+## 6.2 Recherche d’hyperparamètres
+
+1. Réalisez un *grid search* (ou *random search*) sur `ntree`, `mtry`, etc.  
+2. Sélectionnez le meilleur modèle.  
+3. Comparez ses performances au modèle de base (tableau récapitulatif).  
+4. Utilisez le modèle final pour prédire `diagnosis` sur le jeu test
+5. Evaluer les performances du modèle final
+
+```{r}
+### Définir la grille de recherche et validation croisée
+
+set.seed(123)
+
+# Grille de valeurs à tester pour mtry
+grid <- expand.grid(mtry = c(2, 3, 4, 5, 6))
+
+# Paramètres pour train()
+control <- trainControl(method = "cv", number = 5)
+
+
+### Entraînement avec grid search et 5-fold CV
+# Entraînement avec grid search
+rf_tuned <- train(
+  diagnosis ~ ., 
+  data = train_data,
+  method = "rf",
+  metric = "Accuracy",
+  tuneGrid = grid,
+  trControl = control,
+  ntree = 300  # nombre d’arbres fixe ici
+)
+
+# Affichage du meilleur modèle
+print(rf_tuned$bestTune)
+
+
+### Comparaison : modèle de base vs. modèle optimisé
+# Prédiction sur test : modèle optimisé
+pred_rf_tuned <- predict(rf_tuned, newdata = test_data)
+
+# Évaluation
+conf_rf_tuned <- confusionMatrix(pred_rf_tuned, test_data$diagnosis)
+print(conf_rf_tuned)
+
+
+### Comparatif des performances
+# Accuracy
+acc_base  <- conf_rf$overall["Accuracy"]
+acc_tuned <- conf_rf_tuned$overall["Accuracy"]
+
+# Résumé comparatif
+perf_compar <- data.frame(
+  Modèle = c("Base", "Optimisé"),
+  Accuracy = c(acc_base, acc_tuned)
+)
+
+print(perf_compar)
+
+
+### Évaluation complète du modèle final (optimisé)
+# Précision, Rappel, F1 par classe
+print(conf_rf_tuned$byClass[, c("Precision", "Recall", "F1")])
+
+# Matrice de confusion
+print(conf_rf_tuned$table)
+
+
+### Visualiser la performance en fonction de mtry
+plot(rf_tuned)
+
+```
+
+
+```{r}
+### Heatmap (carte thermique) de la matrice de confusion
+
+library(ggplot2)
+library(reshape2)
+
+# Extraire et reformater la matrice
+cm <- as.table(conf_rf_tuned$table)
+df_cm <- as.data.frame(cm)
+colnames(df_cm) <- c("Réel", "Prévu", "Freq")
+
+# Heatmap avec ggplot
+ggplot(df_cm, aes(x = Réel, y = Prévu, fill = Freq)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Freq), size = 5, fontface = "bold", color = "black") +
+  scale_fill_gradient(low = "#dbe9f6", high = "#2171b5") +
+  labs(title = "Matrice de confusion – Random Forest",
+       x = "Classe réelle", y = "Classe prédite") +
+  theme_minimal(base_size = 14)
+
+```
+
+```{r}
+### Barplot des scores (Précision / Rappel / F1 par classe)
+
+# Récupérer les scores par classe
+scores <- as.data.frame(conf_rf_tuned$byClass[, c("Precision", "Recall", "F1")])
+scores$Classe <- rownames(scores)
+df_long <- melt(scores, id.vars = "Classe")
+
+# Barplot
+ggplot(df_long, aes(x = Classe, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  scale_fill_manual(values = c("#2ca25f", "#3182bd", "#fd8d3c")) +
+  labs(title = "Scores par classe : Précision, Rappel, F1",
+       y = "Score", x = "Classe", fill = "") +
+  theme_minimal(base_size = 14)
+
+```
+
+
+
+
+
+```{r}
+#### ###  Importance des variables (feature importance)(les variables qui contribuent plus  à la classification.)
+
+library(caret)
+library(ggplot2)
+
+# Extraire l’importance des variables du modèle Random Forest optimisé
+importance_rf <- varImp(rf_tuned)
+df_imp <- importance_rf$importance
+df_imp$Variable <- rownames(df_imp)
+
+# Garder les 10 variables les plus importantes
+top_vars <- df_imp[order(df_imp$Overall, decreasing = TRUE), ][1:10, ]
+
+# Graphique en barres des top variables
+ggplot(top_vars, aes(x = reorder(Variable, Overall), y = Overall)) +
+  geom_bar(stat = "identity", fill = "#1f78b4") +
+  coord_flip() +
+  geom_text(aes(label = round(Overall, 1)), hjust = -0.1, size = 4.2) +
+  labs(title = "Top 10 variables les plus importantes – Random Forest",
+       x = "Variable", y = "Score d’importance") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold")) +
+  expand_limits(y = max(top_vars$Overall) * 1.1)
+
+```
+
+
+
+
